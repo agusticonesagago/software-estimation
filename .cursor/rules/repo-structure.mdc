@@ -1,0 +1,61 @@
+---
+description: Repository layout and where to put new code (CAG FastAPI app)
+alwaysApply: true
+---
+
+# Repository structure
+
+Keep this layout. Do not flatten into a single file. Do not add RAG, DB, auth, or multi-turn unless explicitly requested.
+
+```text
+software-estimation/
+├── app/
+│   ├── main.py                 # FastAPI app, lifespan, /health, include routers
+│   ├── config.py               # Pydantic Settings from .env
+│   ├── routers/                # HTTP only (no LLM calls)
+│   │   └── estimations.py      # POST /estimate
+│   ├── services/               # Business / LLM logic (no HTTP)
+│   │   ├── llm_service.py      # LiteLLM provider-agnostic I/O
+│   │   └── prompts.py          # CAG system prompt builders
+│   ├── schemas/                # Pydantic request/response models
+│   │   ├── estimation.py       # API request/response
+│   │   └── llm.py              # LLM JSON payload + LLMResult
+│   └── context/                # Static CAG prompt data
+│       └── examples.py         # ESTIMATION_EXAMPLES few-shots + loader
+├── docs/                       # Project documentation
+├── .devcontainer/              # Dev Containers (Cursor / VS Code)
+├── tests/
+│   ├── unit/                   # Fast isolated tests
+│   ├── integration/            # API boundaries (TestClient, mocked LLM)
+│   └── e2e/                    # Critical full-stack / container flows
+├── .github/workflows/ci.yml    # Docker-first CI
+├── .cursor/rules/              # Cursor rules (testing, security-django/python, PEP practices, …)
+├── Dockerfile
+├── .dockerignore
+├── .env.example                # No real secrets
+├── .gitignore                  # Must include .env
+├── Makefile
+├── pyproject.toml
+├── uv.lock
+└── README.md
+```
+
+## Placement rules
+
+| Change | Put it in |
+|---|---|
+| New HTTP endpoint | `app/routers/` + wire in `main.py` |
+| LLM provider I/O | `app/services/llm_service.py` |
+| CAG system prompt builders | `app/services/prompts.py` |
+| Request/response shapes | `app/schemas/` |
+| Static few-shot / CAG examples | `app/context/examples.py` |
+| Env settings | `app/config.py` + `.env.example` |
+| Automated tests | `tests/unit|integration|e2e/` (see `testing-*.mdc`) |
+| CI | `.github/workflows/` |
+| Container | `Dockerfile` / `.dockerignore` |
+
+## Boundaries
+
+- Routers call services; services never import FastAPI routers or `Request`/`Response`
+- Context modules are data only; no network I/O
+- API keys only via env / Settings — never hardcode

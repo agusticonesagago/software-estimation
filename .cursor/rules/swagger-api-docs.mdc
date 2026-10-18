@@ -1,0 +1,45 @@
+---
+description: Every API endpoint must be fully documented in Swagger UI (/docs)
+alwaysApply: true
+---
+
+# Swagger / OpenAPI required for every API endpoint
+
+Every HTTP API endpoint **must** appear in Swagger UI at `/docs` (OpenAPI at `/openapi.json`, ReDoc at `/redoc`).
+
+## Mandatory on each route decorator
+
+- `summary` — short English title
+- `description` — what it does, side effects, CAG/LLM notes if any
+- `tags` — must match a tag in `app.main.OPENAPI_TAGS`
+- `response_model` — Pydantic model (never a bare `dict` for JSON APIs)
+- `status_code` — explicit success status
+- `responses` — document success **and** relevant errors (422, 502, …) with models
+- `response_description` — one-line success description
+
+## Mandatory on request/response schemas
+
+- Pydantic models in `app/schemas/`
+- `Field(description=...)` on every public field
+- Examples via `json_schema_extra` and/or `openapi_examples` so Swagger “Try it out” works
+- Validation constraints reflected in the schema (`min_length`, `ge`, …)
+
+## App-level OpenAPI
+
+- Keep `docs_url="/docs"`, `redoc_url="/redoc"`, `openapi_url="/openapi.json"` enabled
+- Set `title`, `summary`/`description`, `version`, `openapi_tags`
+- English only (see `english-code.mdc`)
+
+## Checklist before merging a new endpoint
+
+1. Visible under `/docs`
+2. Try-it-out request example works
+3. Documented error responses match real behavior
+4. No `include_in_schema=False` unless the route is explicitly internal/non-API
+
+## Do not
+
+- Undocumented routes
+- Hide public API with `include_in_schema=False`
+- Disable `/docs` in normal/development builds
+- Spanish OpenAPI text

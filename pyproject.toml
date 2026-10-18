@@ -1,0 +1,48 @@
+[project]
+name = "software-estimation"
+version = "0.1.0"
+description = "FastAPI software estimation service using Cache-Augmented Generation (CAG)"
+readme = "README.md"
+authors = [
+    { name = "Agustí Conesa Gago" },
+]
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+dependencies = [
+    "fastapi>=0.146.0",
+    "litellm>=1.106.0",
+    "loguru>=0.7.3",
+    "pydantic-settings>=2.16.0",
+    "python-dotenv>=1.2.4",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.14.0",
+    "pre-commit>=4.7.0",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+omit = ["app/**/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+fail_under = 90

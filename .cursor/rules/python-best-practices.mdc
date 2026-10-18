@@ -1,0 +1,50 @@
+---
+description: Python coding best practices (PEP 8, typing, structure, errors)
+alwaysApply: true
+globs: "**/*.py"
+---
+
+# Python best practices
+
+## Style & clarity (PEP 8 spirit)
+
+- Readable names; one concept per function; keep functions short
+- Prefer explicit over clever; avoid deeply nested blocks
+- Match existing project style (formatter/linter if present)
+
+## Typing
+
+- Annotate public functions and Pydantic/FastAPI boundaries
+- Prefer `list[str]`, `dict[str, Any]`, `X | None` (3.10+) over legacy `typing` aliases when consistent with the file
+- Do not add noisy types that fight the type checker without benefit
+
+## Errors & control flow
+
+- Raise specific exceptions with clear English messages
+- Avoid bare `except:`; catch the narrowest practical type
+- Do not swallow errors silently; log or re-raise with context
+- Fail fast on invalid configuration at startup
+
+## Data & APIs
+
+- Validate at the edge (Pydantic / schemas); keep core logic pure when possible
+- Immutability by default for shared config; no hidden global mutable state
+- Use context managers for resources (files, clients)
+
+## Dependencies & modules
+
+- Standard library first; add third-party deps only when needed
+- Clear package layout; avoid circular imports
+- No star imports (`from x import *`) in application code
+
+## Testing & change hygiene
+
+- Behavior changes need tests (see `testing-*.mdc`)
+- Do not commit `.env`, secrets, or large generated artifacts
+- Prefer small, reviewable diffs
+
+## FastAPI specifics in this repo
+
+- Routers thin; services own LLM I/O
+- Document endpoints for OpenAPI (`openapi-docs.mdc`)
+- Docstrings Sphinx-style (`python-docstrings.mdc`)

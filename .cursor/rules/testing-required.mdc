@@ -1,0 +1,39 @@
+---
+description: Every feature or behavior change must ship with automated tests
+alwaysApply: true
+---
+
+# Testing is mandatory
+
+Any new or changed **functionality** must include automated tests in the same change.
+
+## Policy
+
+- No feature, bug fix, or behavior change without tests that would fail if the change were reverted
+- Prefer the **test pyramid**: many unit → fewer integration → very few e2e
+- Balance with **SMURF** (Google): Speed, Maintainability, Utilization, Reliability, Fidelity — do not optimize only for count of tests
+- Avoid the **ice-cream cone**: lots of slow e2e and almost no unit tests
+
+## Where tests live
+
+```text
+tests/
+├── unit/           # Isolated pure logic (no network, no real LLM)
+├── integration/    # API / component boundaries (TestClient, mocked LLM)
+└── e2e/            # Critical full-path flows (real HTTP against running app/container)
+```
+
+## Mapping for this project
+
+| Change | Minimum tests |
+|---|---|
+| Schema / validation | `tests/unit/` |
+| CAG loader / prompt builders | `tests/unit/` |
+| Router + service wiring | `tests/integration/` (LLM mocked) |
+| Happy-path estimate + health | one thin `tests/e2e/` or CI container smoke |
+
+## Do not
+
+- Merge untested behavior “to add tests later”
+- Call real OpenAI/Anthropic in unit or default CI (use fakes/mocks)
+- Duplicate the same assertion at every pyramid layer

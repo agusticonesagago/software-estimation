@@ -1,0 +1,52 @@
+---
+description: Python language/runtime security (stdlib warnings + secure coding)
+alwaysApply: true
+globs: "**/*.py"
+---
+
+# Python security
+
+Sources: [Python security considerations](https://docs.python.org/3/library/security_warnings.html), OpenSSF Secure Coding Guide for Python, common secure-coding practice.
+
+## Secrets & randomness
+
+- Never hardcode API keys, tokens, or passwords — use env / secret manager
+- Use `secrets` for tokens (`token_urlsafe`); never `random` for security
+- Compare secrets with `secrets.compare_digest` / `hmac.compare_digest`
+- Do not log secrets, full Authorization headers, or raw API keys
+
+## Dangerous APIs (avoid with untrusted data)
+
+- **`pickle` / `shelve` / `multiprocessing` recv**: do not unpickle untrusted input — prefer JSON
+- **`subprocess`**: use argument lists with `shell=False`; never `shell=True` with user input
+- **`eval` / `exec` / `logging` config with eval**: do not eval user-controlled strings
+- **XML**: use defused parsers if parsing untrusted XML
+- **`tempfile.mktemp`**: deprecated/racy — use safe tempfile APIs
+- **`zipfile`**: guard against zip bombs / path traversal on extract
+- **`http.server`**: not for production
+
+## TLS / HTTP clients
+
+- Prefer HTTPS; do not disable certificate verification in production
+- Use default SSL contexts (`ssl.create_default_context`) unless you have a documented reason
+
+## Paths & isolation
+
+- Prefer running without unsafe `sys.path` prepend (`-P` / `PYTHONSAFEPATH` when applicable)
+- Do not serve application source from a public web root
+
+## Crypto
+
+- Do not invent crypto; use vetted libraries
+- Password hashing: Argon2/bcrypt/scrypt via standard libs — never plaintext or raw SHA for passwords
+
+## Supply chain
+
+- Pin/lock dependencies (`uv.lock`); review new deps
+- Prefer scanning (e.g. Bandit, `pip-audit` / `uv` audits) in CI when adding security tooling
+
+## This project specifically
+
+- LLM API keys only via Settings / `.env` (gitignored)
+- Do not send secrets in estimate responses or OpenAPI examples
+- Bound and validate `transcription` length before calling providers (cost / abuse)

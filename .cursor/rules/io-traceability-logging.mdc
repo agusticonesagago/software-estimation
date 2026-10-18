@@ -1,0 +1,34 @@
+---
+description: Log user inputs and model outputs for LLM/API traceability
+alwaysApply: true
+---
+
+# I/O traceability logging
+
+Every user-facing LLM flow **must** log inputs and outputs for auditability.
+
+## What to log
+
+On each estimation (and similar LLM endpoints):
+
+| Side | Fields |
+|---|---|
+| User input | `request_id`, endpoint, `transcription` (full text) |
+| Model output | `request_id`, `provider`, `model`, `estimation` (full text), token counts if available |
+| Failures | `request_id`, error class/message (no API keys) |
+
+Use **Loguru** (`app.logging_config`) and a shared `request_id` across the request.
+
+## Rules
+
+- Log **before** the LLM call (input) and **after** success (output)
+- On provider errors, log the failure with the same `request_id`
+- **Never** log API keys, raw `.env`, or Authorization headers
+- Prefer structured `logger.info("...", extra={...})` so fields are searchable
+- OpenAPI `json_schema_extra` / `examples` are **docs only** — they are not runtime responses and must not replace tracing
+
+## Do not
+
+- Rely on Swagger examples as proof of what was returned
+- Skip logging because the payload is large (truncate only if explicitly required later)
+- Log secrets or provider credentials

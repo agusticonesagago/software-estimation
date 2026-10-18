@@ -1,0 +1,36 @@
+---
+description: Unit test conventions (fast, isolated, many)
+globs: "tests/unit/**/*.py"
+alwaysApply: false
+---
+
+# Unit tests
+
+Follow the Practical Test Pyramid / GitLab “small tests”: **fast, isolated, majority of the suite**.
+
+## What belongs here
+
+- Pure functions and validators (`schemas`, CAG examples module, prompt builders)
+- Branching and error messages without HTTP or network
+- Edge cases: empty input, min length, missing files, bad provider config
+
+## Rules
+
+- **No I/O**: no real HTTP, DB, disk writes outside fixtures, no real LLM API calls
+- Replace externals with fakes/mocks/stubs; keep doubles close to real contracts
+- One behavior per test; name: `test_<unit>_<condition>_<expected>`
+- Must run in milliseconds and be fully deterministic (no time/network flakes)
+- Arrange–Act–Assert; assert on observable outputs, not private internals unless necessary
+
+## Example targets in this repo
+
+- `EstimationRequest` min length / strip validation
+- `ESTIMATION_EXAMPLES` has ≥2 entries with `meeting_summary` + `estimation`
+- `load_cag_examples_markdown` markers
+- `app.services.prompts.build_system_prompt` includes CAG delimiters
+- `Settings.validate_provider_and_model` missing API key
+
+## Do not
+
+- Start FastAPI/`TestClient` here (that is integration)
+- Sleep, retry loops, or hit `localhost`

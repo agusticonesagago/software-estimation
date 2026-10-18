@@ -1,0 +1,40 @@
+---
+description: Sphinx-style docstrings with :arg, :return, and :raises on every function
+globs: "**/*.py"
+alwaysApply: true
+---
+
+# Python docstrings (Sphinx)
+
+Every **public and private function/method** must have a docstring in **English** using Sphinx fields.
+
+## Required shape
+
+```python
+def example(name: str, count: int = 1) -> str:
+    """One-line summary in imperative mood.
+
+    Optional longer explanation.
+
+    :arg name: Description of ``name``.
+    :arg count: Description of ``count``.
+    :return: Description of the return value.
+    :raises ValueError: When ``name`` is empty.
+    """
+```
+
+## Field rules
+
+- Use `:arg name:` for each parameter (not `:param:`).
+- Use `:return:` once (use `:return: None.` when the function returns nothing useful).
+- Use `:raises ErrorType:` for every exception the function intentionally raises or lets callers handle.
+- If a function cannot raise under normal use, still include `:raises:` with `Does not raise under normal operation.` or list only realistic cases.
+- Skip `__init__.py` re-export-only modules if they contain no functions.
+- Module-level docstrings: one short English summary (no `:arg` required).
+- Class docstrings: short English summary; document `__init__` / methods with full fields.
+
+## Do not
+
+- Google/NumPy docstring styles in this repo
+- Spanish docstrings
+- Empty `"""..."""` placeholders without fields on functions

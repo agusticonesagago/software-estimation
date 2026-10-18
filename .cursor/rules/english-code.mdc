@@ -1,0 +1,37 @@
+---
+description: All code, identifiers, comments, and user-facing API strings must be in English
+alwaysApply: true
+---
+
+# English-only code
+
+All **code** in this repository must be written in English.
+
+## Must be English
+
+- Identifiers: modules, packages, classes, functions, variables, constants
+- Comments and docstrings
+- Log messages, exceptions, and `HTTPException` / API `detail` strings
+- OpenAPI titles, descriptions, and Field descriptions
+- Commit messages and PR titles when authored in this project
+
+## Allowed exceptions
+
+- Domain quotes inside static CAG examples (e.g. fictional client meeting text) may stay in Spanish if they simulate real meeting transcripts
+- User-facing README sections may be bilingual only when documenting for Spanish-speaking readers; prefer English for technical sections
+
+## Examples
+
+```python
+# ❌ BAD
+def generar_estimacion(transcripcion: str) -> str:
+    """Genera una estimación a partir de la reunión."""
+    raise ValueError("Falta la clave del proveedor")
+
+# ✅ GOOD
+def generate_estimation(transcription: str) -> str:
+    """Generate an estimation from the meeting transcription."""
+    raise ValueError("Missing provider API key")
+```
+
+When editing existing Spanish identifiers or messages in code, rename/translate them to English in the same change unless the user asks otherwise.

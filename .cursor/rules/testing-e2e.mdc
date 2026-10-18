@@ -1,0 +1,39 @@
+---
+description: End-to-end test conventions (critical paths only, expensive)
+globs: "tests/e2e/**/*.py"
+alwaysApply: false
+---
+
+# End-to-end (E2E) tests
+
+Top of the pyramid: **few**, high-fidelity checks of critical journeys. Expensive and flake-prone — use sparingly (Home Office / GitLab guidance).
+
+## What belongs here
+
+- Real process or **container** listening on a port
+- Critical path only: health + one successful estimate **or** CI Docker smoke
+- Optional: OpenAPI `/docs` reachable
+
+## Rules
+
+- Cover **riskiest user/API journeys**, not every endpoint permutation
+- Prefer stable assertions (status codes, JSON keys) over brittle full-body matches
+- Isolate secrets: use test keys / mocks unless an explicit paid “live LLM” job exists
+- Run in CI less often or as a dedicated job if slow; never block on dozens of e2e
+- Clean up containers/processes; fail with logs on timeout
+
+## Example targets in this repo
+
+- Build image → run container → `GET /health` (already in `.github/workflows/ci.yml`)
+- Optional: `POST /api/v1/estimate` against container with mocked provider sidecar or stubbed env — only if valuable beyond integration
+
+## Do not
+
+- Replace unit/integration coverage with e2e
+- Call paid LLMs on every PR by default
+- Large UI/browser suites unless a frontend exists
+- Flaky sleeps without bounded retries and clear failure logs
+
+## Fidelity vs cost (SMURF)
+
+E2E maximizes **fidelity**; unit maximizes **speed/reliability**. Keep e2e thin so the suite stays maintainable.

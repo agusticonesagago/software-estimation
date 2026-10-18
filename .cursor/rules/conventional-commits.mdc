@@ -1,0 +1,64 @@
+---
+description: All git commits must follow Conventional Commits
+alwaysApply: true
+---
+
+# Conventional Commits
+
+Every commit message in this repository **must** follow [Conventional Commits](https://www.conventionalcommits.org/).
+
+## Format
+
+```text
+<type>(<optional-scope>): <short description>
+
+[optional body]
+
+[optional footer]
+```
+
+- Subject in **English**, imperative mood, no trailing period
+- Keep the first line ≤ 72 characters
+- `type` is required; `scope` is optional
+
+## Allowed types
+
+| Type | Use when |
+|---|---|
+| `feat` | New user-facing capability |
+| `fix` | Bug fix |
+| `docs` | Documentation only |
+| `style` | Formatting; no logic change |
+| `refactor` | Code change that is not a feat or fix |
+| `perf` | Performance improvement |
+| `test` | Add or fix tests |
+| `build` | Dependencies, packaging, Docker |
+| `ci` | GitHub Actions / CI config |
+| `chore` | Maintenance that does not fit above |
+
+## Examples
+
+```text
+feat(estimations): require 100-char minimum transcription
+fix(llm): handle empty Anthropic text blocks
+docs(readme): document Docker make targets
+ci: run smoke tests inside the Docker image
+chore(rules): add conventional commits cursor rule
+```
+
+## Do not
+
+```text
+# ❌ BAD
+Updated stuff
+fix: fixed bug.
+FEAT: Add endpoint
+wip
+```
+
+When creating commits for the user, always draft the message in this format.
+
+## Related gates
+
+- Pre-commit also enforces **coverage ≥ 90%** (`coverage-90.mdc`) before the commit is created.
+- Commit-msg hook validates Conventional Commits via `.pre-commit-config.yaml`.

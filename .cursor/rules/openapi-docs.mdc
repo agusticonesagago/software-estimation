@@ -1,0 +1,24 @@
+---
+description: FastAPI OpenAPI schema details (companion to swagger-api-docs)
+globs: "app/**/*.py"
+alwaysApply: true
+---
+
+# OpenAPI schema details
+
+Companion to `swagger-api-docs.mdc`. Every API endpoint must show in Swagger `/docs`.
+
+## Schemas
+
+- `Field(description=...)` on every public attribute
+- Examples via `json_schema_extra` and/or route `Body(openapi_examples=...)`
+- Validation rules (`min_length`, `ge`, …) must match runtime behavior
+
+## Tags
+
+- Register tags in `app.main.OPENAPI_TAGS` before using them on routes
+
+## Do not
+
+- Bare `dict` JSON responses when a Pydantic model exists
+- Spanish OpenAPI text

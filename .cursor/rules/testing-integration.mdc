@@ -1,0 +1,37 @@
+---
+description: Integration test conventions (boundaries, contracts, fewer than unit)
+globs: "tests/integration/**/*.py"
+alwaysApply: false
+---
+
+# Integration tests
+
+Middle of the pyramid: verify **contracts between components**, not every branch.
+
+## What belongs here
+
+- FastAPI routes via `TestClient` (ASGI in-process)
+- Router → service wiring with **mocked** `LLMService` / provider SDK
+- OpenAPI path presence, status codes (200 / 422 / 502), response shape
+- Config lifespan fail-fast when keys missing (if tested without full process)
+
+## Rules
+
+- Test **one boundary at a time** (e.g. HTTP ↔ service), not the whole production stack
+- Prefer real framework pieces (FastAPI, Pydantic) + fake LLM over mocking everything
+- Keep tests deterministic; mock provider HTTP, do not call OpenAI/Anthropic
+- Fewer than unit tests; cover happy path + main failure contracts (422, 502)
+- Still automated and CI-friendly (seconds, not minutes)
+
+## Example targets in this repo
+
+- `GET /health` → 200 `{"status":"ok"}`
+- `POST /api/v1/estimate` valid body → 200 with mocked estimation
+- `POST /api/v1/estimate` short/missing body → 422
+- Provider exception → 502 `LLM provider error: ...`
+
+## Do not
+
+- Re-test every pure validator branch already covered in unit tests
+- Require a running Docker container (that is e2e / CI smoke)
+- Assert on full Markdown prose of the model — assert structure/metadata

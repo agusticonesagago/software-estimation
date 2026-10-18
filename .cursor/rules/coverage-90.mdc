@@ -1,0 +1,26 @@
+---
+description: Require at least 90% test coverage; enforce on pre-commit
+alwaysApply: true
+---
+
+# Coverage ≥ 90%
+
+Minimum **90%** line/branch coverage on `app/` is mandatory.
+
+## Enforcement
+
+- `pyproject.toml` → `[tool.coverage.report] fail_under = 90`
+- Local: `make coverage` or `make tests` with cov flags
+- **pre-commit** runs coverage and **blocks the commit** if below 90%
+- CI must keep the same threshold
+
+## When adding features
+
+- Ship tests in the same change
+- Prefer unit tests for new logic; mock LLM SDKs — no paid API calls in hooks/CI
+- Do not lower `fail_under` without an explicit product decision
+
+## Do not
+
+- Commit with failing coverage
+- Exclude large modules from coverage to fake the metric
