@@ -46,7 +46,7 @@ No real OpenAI/Anthropic calls in CI.
 
 ## CI (GitHub Actions)
 
-`.github/workflows/ci.yml` on push/PR to `master`:
+`.github/workflows/ci.yml` on push/PR to `session_*`:
 
 1. `uv sync --group dev` + `pytest`
 2. Docker build
@@ -54,7 +54,7 @@ No real OpenAI/Anthropic calls in CI.
 
 ## GitHub Flow + Conventional Commits
 
-- Short branches → PR → green CI → merge to `master`
+- One branch per session (`session_2`, `session_3`, …) → green CI → email TA with the branch URL
 - Messages: `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `chore:`, …
 
 Example: `docs: add project documentation under docs/`

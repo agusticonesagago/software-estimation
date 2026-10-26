@@ -14,26 +14,18 @@ Author: Agustí Conesa Gago · License: Proprietary
 - [uv](https://docs.astral.sh/uv/)
 - An API key for OpenAI and/or Anthropic
 
-## GitHub Flow
+## Delivery (session branches)
 
-We use **GitHub Flow**: `master` is always deployable; work lands via short-lived PRs.
+One GitHub repo for all exercises. **One branch per session** (e.g. `session_2`).
 
-1. Update `master`: `git checkout master && git pull`
-2. Create a branch: `git checkout -b feature/my-change`
-3. Small Conventional Commits (`feat:`, `fix:`, `docs:`, …)
-4. Open a **Pull Request** into `master`
-5. Wait for **CI** (pytest coverage ≥ 90% + Docker health)
-6. Review → merge → delete the branch
-
-```text
-master ────────────────────────────────●──── (merge PR)
-         \                             /
-          ●──●── feature/my-change ───●
-```
+1. Work on `session_N` for that session’s exercise
+2. Small Conventional Commits (`feat:`, `fix:`, `docs:`, …)
+3. Push the branch and email the TA with the session + branch URL
+4. Wait for **CI** on `session_*` (pytest coverage ≥ 90% + Docker health)
 
 Pre-commit (local): coverage ≥ 90% + Conventional Commit message.
 
-CI (`.github/workflows/ci.yml`) on every PR/push to `master`:
+CI (`.github/workflows/ci.yml`) on every PR/push to `session_*`:
 
 1. `uv sync --group dev` + `pytest --cov-fail-under=90`
 2. Build Docker image
