@@ -12,6 +12,7 @@ COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-install-project --no-dev
 
 COPY app ./app
+COPY streamlit_app.py ./
 RUN uv sync --frozen --no-dev
 
 FROM python:3.11-slim-bookworm AS runtime
@@ -28,6 +29,6 @@ COPY --from=builder --chown=appuser:appuser /app /app
 
 USER appuser
 
-EXPOSE 8000
+EXPOSE 8000 8501
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

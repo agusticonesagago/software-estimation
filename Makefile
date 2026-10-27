@@ -1,4 +1,4 @@
-.PHONY: help sync setup run health estimate docs tests coverage pre-commit-install ci docker-build docker-run docker-stop
+.PHONY: help sync setup run chat health estimate docs tests coverage pre-commit-install ci docker-build docker-run docker-stop docker-up docker-down
 
 HOST ?= localhost
 PORT ?= 8080
@@ -19,6 +19,9 @@ setup: sync ## Sync deps and create .env from example if missing
 
 run: ## Start API with hot reload
 	uv run uvicorn app.main:app --reload --host $${HOST:-$(HOST)} --port $${PORT:-$(PORT)}
+
+chat: ## Start Streamlit chat UI (CAG estimation)
+	uv run streamlit run streamlit_app.py
 
 health: ## GET /health
 	curl -sS $(BASE_URL)/health
@@ -72,3 +75,11 @@ docker-run: ## Run container (reads API keys from .env)
 
 docker-stop: ## Stop the Docker container
 	-docker stop $(CONTAINER)
+
+docker-up: ## Start API + Streamlit via docker compose
+	docker compose up --build -d
+	@echo "API:  http://localhost:8080/docs"
+	@echo "Chat: http://localhost:8501"
+
+docker-down: ## Stop docker compose services
+	docker compose down

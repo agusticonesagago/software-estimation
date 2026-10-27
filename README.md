@@ -21,11 +21,11 @@ One GitHub repo for all exercises. **One branch per session** (e.g. `session_2`)
 1. Work on `session_N` for that session’s exercise
 2. Small Conventional Commits (`feat:`, `fix:`, `docs:`, …)
 3. Push the branch and email the TA with the session + branch URL
-4. Wait for **CI** on `session_*` (pytest coverage ≥ 90% + Docker health)
+4. Wait for **CI** on `master` / `session_*` (pytest coverage ≥ 90% + Docker health)
 
 Pre-commit (local): coverage ≥ 90% + Conventional Commit message.
 
-CI (`.github/workflows/ci.yml`) on every PR/push to `session_*`:
+CI (`.github/workflows/ci.yml`) on every PR/push to `master` or `session_*`:
 
 1. `uv sync --group dev` + `pytest --cov-fail-under=90`
 2. Build Docker image
@@ -59,16 +59,35 @@ make run
 # equivalent: uv run uvicorn app.main:app --reload
 ```
 
+### Streamlit chat
+
+```bash
+make chat
+# equivalent: uv run streamlit run streamlit_app.py
+```
+
+Paste a meeting transcription in the chat. Uses the same CAG system prompt and
+LLM service as the API; keys come from ``.env``.
+
+In the sidebar:
+
+- **Interaction mode** — Streaming (token by token) or Complete (full reply)
+- **CAG context** — active system instructions + static few-shot examples (read-only)
+- **Last call metrics** — model, input/output tokens, response time
+
 | Target | What it does |
 |---|---|
 | `make setup` | `uv sync` + create `.env` from example if missing |
 | `make run` | Start API with hot reload |
+| `make chat` | Start Streamlit chat UI (`streamlit_app.py`) |
 | `make health` | `GET /health` |
 | `make estimate` | Sample `POST /api/v1/estimate` |
 | `make docs` | Print Swagger URL |
 | `make tests` | Run pytest (unit / integration / e2e) |
 | `make coverage` | Pytest with coverage (term + `htmlcov/`) |
 | `make ci` | pytest + Docker health (mirrors CI) |
+| `make docker-up` | Compose: API + Streamlit |
+| `make docker-down` | Stop compose services |
 | `make docker-build` | Build Docker image |
 | `make docker-run` | Run container with `.env` |
 | `make docker-stop` | Stop container |
@@ -95,13 +114,20 @@ LLM providers are **mocked** in tests; no real API calls.
 ## Docker
 
 ```bash
+# API + Streamlit chat (recommended)
+make docker-up     # needs a valid .env with API keys
+# API:  http://localhost:8080/docs
+# Chat: http://localhost:8501
+make docker-down
+
+# Or single API container
 make docker-build
-make docker-run    # needs a valid .env with API keys
+make docker-run
 make health
 make docker-stop
 ```
 
-Multi-stage image: build with `uv`, run with slim Python. Secrets via `--env-file .env` (nunca en la imagen).
+Multi-stage image: build with `uv`, run with slim Python. Secrets via `.env` / compose `env_file` (never baked into the image).
 
 ## Test estimation
 
@@ -137,7 +163,7 @@ software-estimation/
 │   ├── routers/
 │   ├── services/            # llm_service.py (LiteLLM) + prompts.py
 │   ├── schemas/             # HTTP + LLM payloads
-│   └── context/examples.py  # CAG ESTIMATION_EXAMPLES few-shots
+│   └── context/examples.py  # CAG CANONICAL_EXAMPLES few-shots
 ├── docs/                    # Project documentation
 ├── tests/
 │   ├── unit/
@@ -146,6 +172,7 @@ software-estimation/
 ├── .cursor/rules/
 ├── .github/workflows/
 ├── Dockerfile
+├── docker-compose.yml       # api (:8080) + chat (:8501)
 ├── Makefile
 ├── pyproject.toml
 └── README.md

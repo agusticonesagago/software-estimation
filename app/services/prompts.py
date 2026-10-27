@@ -31,8 +31,8 @@ Before you answer, validate all of the following:
 4. Hours, duration, and team size are consistent with each other.
 5. CAG examples are references only — do not copy an example verbatim unless the
    new request is essentially identical.
-6. Respect CAG FEW-SHOT EXAMPLE / END CAG FEW-SHOT EXAMPLE delimiters; do not
-   mix scopes across example blocks.
+6. Respect ``--- EXAMPLE N ---`` delimiters; do not mix scopes across example
+   blocks.
 7. Prefer explicit assumptions over silent guesses when information is missing.
 8. Confidence must reflect uncertainty: lower when requirements are vague,
    missing constraints, or high risk; higher when scope, timeline, and stack
@@ -50,6 +50,21 @@ Respond with a single JSON object only (no markdown fences, no prose outside JSO
 
 `confidence` is how sure you are about this estimate (1.0 = very sure, 0.0 = guess).
 """
+
+
+def build_system_instructions() -> str:
+    """Build role + validation instructions without CAG few-shot examples.
+
+    Useful for UI panels that show the active system rules separately from
+    the static estimation examples.
+
+    :return: Intro and validations concatenated.
+    :raises: Does not raise under normal operation.
+    """
+    return (
+        f"{SYSTEM_PROMPT_INTRO.strip()}\n\n"
+        f"{SYSTEM_PROMPT_VALIDATIONS.strip()}\n"
+    )
 
 
 def build_system_prompt() -> str:
@@ -71,5 +86,6 @@ def build_system_prompt() -> str:
 __all__ = [
     "SYSTEM_PROMPT_INTRO",
     "SYSTEM_PROMPT_VALIDATIONS",
+    "build_system_instructions",
     "build_system_prompt",
 ]

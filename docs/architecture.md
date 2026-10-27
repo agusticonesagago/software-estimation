@@ -34,7 +34,8 @@ POST /api/v1/estimate { transcription }
 System prompt order (important):
 
 1. **Intro** — role and estimation structure  
-2. **CAG examples** — `app/context/examples.py` (`ESTIMATION_EXAMPLES`) with clear delimiters  
+2. **CAG examples** — `app/context/examples.py` (`CANONICAL_EXAMPLES`) with clear delimiters  
+
 
 3. **Validations** — final checklist + required JSON format  
 
@@ -47,7 +48,7 @@ System prompt order (important):
 | `app/services/llm_service.py` | LiteLLM I/O (`openai/` / `anthropic/` models) |
 | `app/services/prompts.py` | CAG system prompt (intro + examples + validations) |
 | `app/schemas/` | HTTP contracts (`estimation.py`) and LLM contracts (`llm.py`) |
-| `app/context/examples.py` | Static few-shots (`ESTIMATION_EXAMPLES`) |
+| `app/context/examples.py` | Static few-shots (`CANONICAL_EXAMPLES`) |
 | `app/config.py` | Settings from `.env` |
 | `app/logging_config.py` | Loguru + input/output traces |
 

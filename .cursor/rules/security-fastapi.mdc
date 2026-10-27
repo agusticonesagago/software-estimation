@@ -1,0 +1,71 @@
+---
+description: FastAPI / Starlette / OWASP web security principles
+alwaysApply: true
+---
+
+# Web security (FastAPI + OWASP)
+
+Sources: [FastAPI security](https://fastapi.tiangolo.com/tutorial/security/), [Starlette Security](https://www.starlette.dev/), [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/), [OWASP API Security Top 10](https://owasp.org/www-project-api-security/).
+
+This repo is a **FastAPI** JSON API. Prefer Pydantic validation, dependency injection, and reverse-proxy / middleware for transport security.
+
+## Never trust user input
+
+- Validate and sanitize all external input (body, query, headers, files, env)
+- Prefer allowlists and Pydantic models (`Field`, `min_length`, enums) over ad-hoc checks
+- Bound expensive fields (e.g. `transcription` length) before calling LLMs
+
+## XSS
+
+- Escape HTML when rendering user content; never mark untrusted data as safe
+- Avoid injecting raw user strings into HTML/JS contexts
+- Be careful with Markdown/HTML from LLMs if ever rendered in a browser
+- For pure JSON APIs, still treat response fields as untrusted if a frontend will display them
+
+## CSRF
+
+- Protect cookie-based session state-changing requests (CSRF tokens / SameSite)
+- For pure Bearer/API-key JSON APIs without cookies, CSRF risk is lower — do not add fake CSRF theater; do not introduce cookie auth without CSRF
+
+## Injection (SQL / command / prompt)
+
+- Use parameterized queries / ORM only; never f-string or concatenate SQL
+- Avoid raw SQL unless parameters are bound; never interpolate user input
+- Do not build shell commands from user input (`subprocess` with `shell=False` + arg lists)
+- Treat LLM prompts as untrusted composition: do not concatenate secrets; keep system vs user roles clear
+
+## Clickjacking / headers
+
+- Prefer `X-Frame-Options: DENY` (or CSP `frame-ancestors`) unless embedding is required
+- Enable `X-Content-Type-Options: nosniff`, HSTS when serving HTTPS
+- Set security headers at the reverse proxy or with Starlette middleware when not already handled at the edge
+
+## HTTPS / cookies / Host
+
+- Production behind HTTPS; redirect HTTP→HTTPS at the edge when possible
+- Secure cookies: `Secure`, `HttpOnly`, `SameSite` when using sessions
+- Validate Host / configure trusted hosts; never trust raw `Host` for security decisions
+- Be extremely careful with forwarded proto/host headers from proxies (`X-Forwarded-*`)
+
+## Secrets & debug
+
+- Never ship verbose exception bodies or debug stack traces in production
+- Secrets (API keys, tokens) only via env / Settings / secret manager — never in git
+- Rotate keys if exposed; fail closed when required secrets are missing at startup
+- Do not log Authorization headers, API keys, or raw `.env`
+
+## Uploads, auth & expensive endpoints
+
+- Limit upload size/type; serve user content from a separate domain when possible
+- Rate-limit auth and expensive endpoints (e.g. LLM calls)
+- Authorize at the data layer (broken access control is app logic, not FastAPI magic)
+- Prefer FastAPI `Depends()` for auth and shared guards
+
+## OpenAPI / docs
+
+- Keep `/docs` and `/openapi.json` useful in development; restrict or protect them in production if the API is public and sensitive
+- Never put real secrets in OpenAPI examples
+
+## Dependencies
+
+- Keep FastAPI, Starlette, Uvicorn, and other deps patched; audit lockfiles in CI when practical

@@ -46,7 +46,7 @@ No real OpenAI/Anthropic calls in CI.
 
 ## CI (GitHub Actions)
 
-`.github/workflows/ci.yml` on push/PR to `session_*`:
+`.github/workflows/ci.yml` on push/PR to `master` or `session_*`:
 
 1. `uv sync --group dev` + `pytest`
 2. Docker build
@@ -61,11 +61,10 @@ Example: `docs: add project documentation under docs/`
 
 ## Cursor rules
 
-Under `.cursor/rules/` (always-on / by glob): English-only code, repo structure, Sphinx docstrings, OpenAPI/Swagger, mandatory tests, Django/Python security, best practices, I/O logging, Conventional Commits.
+Under `.cursor/rules/` (always-on / by glob): English-only code, repo structure, Sphinx docstrings, OpenAPI/Swagger, mandatory tests, FastAPI/Python security, best practices, I/O logging, Conventional Commits.
 
 ## Adding a CAG example
 
-1. Append a dict to `ESTIMATION_EXAMPLES` in `app/context/examples.py` with
-   `meeting_summary` and `estimation` (domain meeting text may stay in Spanish)
-2. `load_cag_examples_markdown()` joins them automatically with CAG delimiters
-3. No service changes unless you change delimiter format
+1. Append a `CanonicalExample` to `CANONICAL_EXAMPLES` in `app/context/examples.py`
+2. Keep structured fields (`breakdown`, totals, team) aligned with `estimation_markdown`
+3. `load_cag_examples_markdown()` / `format_examples_for_prompt()` inject them into prompts

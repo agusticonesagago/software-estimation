@@ -21,7 +21,7 @@ software-estimation/
 │   │   ├── estimation.py       # API request/response
 │   │   └── llm.py              # LLM JSON payload + LLMResult
 │   └── context/                # Static CAG prompt data
-│       └── examples.py         # ESTIMATION_EXAMPLES few-shots + loader
+│       └── examples.py         # CANONICAL_EXAMPLES few-shots + formatters
 ├── docs/                       # Project documentation
 ├── .devcontainer/              # Dev Containers (Cursor / VS Code)
 ├── tests/
@@ -29,11 +29,13 @@ software-estimation/
 │   ├── integration/            # API boundaries (TestClient, mocked LLM)
 │   └── e2e/                    # Critical full-stack / container flows
 ├── .github/workflows/ci.yml    # Docker-first CI
-├── .cursor/rules/              # Cursor rules (testing, security-django/python, PEP practices, …)
+├── .cursor/rules/              # Cursor rules (testing, security-fastapi/python, PEP practices, …)
 ├── Dockerfile
+├── docker-compose.yml          # api + Streamlit chat
 ├── .dockerignore
 ├── .env.example                # No real secrets
 ├── .gitignore                  # Must include .env
+├── streamlit_app.py            # Streamlit chat UI (session exercises)
 ├── Makefile
 ├── pyproject.toml
 ├── uv.lock
@@ -48,7 +50,7 @@ software-estimation/
 | LLM provider I/O | `app/services/llm_service.py` |
 | CAG system prompt builders | `app/services/prompts.py` |
 | Request/response shapes | `app/schemas/` |
-| Static few-shot / CAG examples | `app/context/examples.py` |
+| Static few-shot / CAG examples | `app/context/examples.py` (`CANONICAL_EXAMPLES`) |
 | Env settings | `app/config.py` + `.env.example` |
 | Automated tests | `tests/unit|integration|e2e/` (see `testing-*.mdc`) |
 | CI | `.github/workflows/` |

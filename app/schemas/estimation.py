@@ -1,10 +1,13 @@
 """Pydantic request/response models exposed in OpenAPI."""
 
 from datetime import datetime, timezone
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 MIN_TRANSCRIPTION_LENGTH = 100
+
+ExampleFormat = Literal["markdown", "json", "narrative"]
 
 
 class EstimationRequest(BaseModel):

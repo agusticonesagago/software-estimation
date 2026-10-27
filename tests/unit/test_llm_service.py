@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.config import LLMProvider, Settings
-from app.services.llm_service import LLMService, generate_estimation
+from app.services.llm_service import LLMService, generate_estimation, stream_estimation
 
 
 def _openai_settings() -> Settings:
@@ -134,3 +134,59 @@ def test_generate_rejects_missing_api_key() -> None:
     settings.anthropic_api_key = None
     with pytest.raises(ValueError, match="Missing API key"):
         LLMService(settings).generate("b" * 120)
+
+
+def test_generate_stream_yields_token_deltas() -> None:
+    """Stream LiteLLM chunks as text deltas with stream=True.
+
+    :return: None.
+    :raises AssertionError: If deltas or call kwargs are wrong.
+    """
+    chunks = [
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content='{"e'))]),
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="st"))]),
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=None))]),
+        {"choices": [{"delta": {"content": "!"}}]},
+        {"choices": []},
+    ]
+
+    with patch("app.services.llm_service.completion", return_value=chunks) as mock_comp:
+        pieces = list(LLMService(_openai_settings()).generate_stream("x" * 120))
+
+    assert pieces == ['{"e', "st", "!"]
+    assert mock_comp.call_args.kwargs["stream"] is True
+    assert mock_comp.call_args.kwargs["stream_options"] == {"include_usage": True}
+
+
+def test_generate_stream_captures_usage_from_final_chunk() -> None:
+    """Store token usage reported on the final stream chunk.
+
+    :return: None.
+    :raises AssertionError: If usage is not captured on the service.
+    """
+    chunks = [
+        SimpleNamespace(
+            choices=[SimpleNamespace(delta=SimpleNamespace(content="x"))],
+            usage=None,
+        ),
+        SimpleNamespace(
+            choices=[],
+            usage=SimpleNamespace(prompt_tokens=10, completion_tokens=4),
+        ),
+    ]
+    service = LLMService(_openai_settings())
+    with patch("app.services.llm_service.completion", return_value=chunks):
+        assert list(service.generate_stream("x" * 120)) == ["x"]
+    assert service.last_prompt_tokens == 10
+    assert service.last_completion_tokens == 4
+
+
+def test_stream_estimation_wrapper_uses_service() -> None:
+    """Expose stream_estimation as a thin wrapper.
+
+    :return: None.
+    :raises AssertionError: If wrapper does not iterate the mocked stream.
+    """
+    with patch("app.services.llm_service.LLMService") as svc_cls:
+        svc_cls.return_value.generate_stream.return_value = iter(["a", "b"])
+        assert list(stream_estimation("z" * 120)) == ["a", "b"]

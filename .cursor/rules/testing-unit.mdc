@@ -25,7 +25,8 @@ Follow the Practical Test Pyramid / GitLab “small tests”: **fast, isolated, 
 ## Example targets in this repo
 
 - `EstimationRequest` min length / strip validation
-- `ESTIMATION_EXAMPLES` has ≥2 entries with `meeting_summary` + `estimation`
+- `CANONICAL_EXAMPLES` has ≥2 entries with structured fields + Markdown
+- `format_examples_for_prompt` (markdown/json/narrative)
 - `load_cag_examples_markdown` markers
 - `app.services.prompts.build_system_prompt` includes CAG delimiters
 - `Settings.validate_provider_and_model` missing API key

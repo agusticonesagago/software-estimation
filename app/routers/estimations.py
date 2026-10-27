@@ -32,7 +32,7 @@ _ESTIMATE_BODY_EXAMPLE = (
     description=(
         "Accepts a meeting transcription and returns a Markdown software "
         "estimation. Uses **CAG** (Cache-Augmented Generation): static few-shot "
-        "examples from `app/context/examples.py` (`ESTIMATION_EXAMPLES`) are "
+        "examples from `app/context/examples.py` (`CANONICAL_EXAMPLES`) are "
         "injected into the system prompt on every request. No database, "
         "retrieval, or multi-turn memory. "
         "User input and model output are logged for traceability."

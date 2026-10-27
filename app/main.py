@@ -33,8 +33,9 @@ OPENAPI_DESCRIPTION = """
 estimation (Markdown) using **CAG** (Cache-Augmented Generation).
 
 Static few-shot examples live in `app/context/examples.py`
-(`ESTIMATION_EXAMPLES`) and are injected into every LLM system prompt. There is
+(`CANONICAL_EXAMPLES`) and are injected into every LLM system prompt. There is
 no database, no vector retrieval, and no multi-turn chat.
+
 
 
 ## Authentication

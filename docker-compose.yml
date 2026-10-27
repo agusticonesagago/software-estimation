@@ -1,0 +1,59 @@
+services:
+  api:
+    build: .
+    image: software-estimation:local
+    container_name: software-estimation-api
+    ports:
+      - "8080:8000"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  chat:
+    image: software-estimation:local
+    container_name: software-estimation-chat
+    build: .
+    command:
+      [
+        "streamlit",
+        "run",
+        "streamlit_app.py",
+        "--server.address",
+        "0.0.0.0",
+        "--server.port",
+        "8501",
+        "--server.headless",
+        "true",
+        "--server.enableCORS",
+        "false",
+        "--server.enableXsrfProtection",
+        "false",
+        "--browser.gatherUsageStats",
+        "false",
+      ]
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    environment:
+      APP_ENV: ${APP_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
