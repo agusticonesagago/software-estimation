@@ -1,0 +1,17 @@
+Estimate the following software project.
+
+Project type: {{ project_type }}
+Detail level: {{ detail_level }}
+Output format: {{ output_format }}
+
+<project_description>
+{{ description }}
+</project_description>
+
+{% if reference_projects %}
+## Similar past projects
+Use these only as calibration anchors; do not copy them blindly.
+{% for project in reference_projects %}
+- **{{ project.name }}**{% if project.actual_hours is not none %} ({{ project.actual_hours }} h){% endif %}: {{ project.summary }}
+{% endfor %}
+{% endif %}

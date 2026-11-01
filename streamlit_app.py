@@ -1,158 +1,151 @@
-"""Streamlit chat UI for CAG software estimations.
+"""Streamlit form UI for typed software estimations.
 
-Run from the project root::
+Run from the project root (API must be reachable)::
 
     uv run streamlit run streamlit_app.py
 
-Uses the same CAG system prompt and LiteLLM call path as ``POST /api/v1/estimate``.
-API keys come from ``.env`` via ``app.config.Settings`` (never hardcoded).
+The form builds an ``EstimationRequest`` and ``POST``s it to
+``/api/v1/estimate``. Override the API base with ``ESTIMATE_API_BASE_URL``
+(default ``http://localhost:8080``; Docker Compose uses ``http://api:8000``).
 """
 
 from __future__ import annotations
 
-import time
+import json
+import os
+import urllib.error
+import urllib.request
 
 import streamlit as st
 
-from app.config import get_settings
-from app.context.examples import CANONICAL_EXAMPLES
-from app.services.chat_reply import format_estimation_reply, format_reply_from_raw_payload
-from app.services.llm_service import LLMService
-from app.services.prompts import build_system_instructions
+from app.schemas.estimation import (
+    MAX_DESCRIPTION_LENGTH,
+    MIN_DESCRIPTION_LENGTH,
+    DetailLevel,
+    EstimationRequest,
+    OutputFormat,
+    ProjectType,
+)
+
+DEFAULT_API_BASE_URL = "http://localhost:8080"
+
+
+def _api_base_url() -> str:
+    """Resolve the FastAPI base URL from the environment.
+
+    :return: Base URL without a trailing slash.
+    :raises: Does not raise under normal operation.
+    """
+    return os.environ.get("ESTIMATE_API_BASE_URL", DEFAULT_API_BASE_URL).rstrip("/")
+
+
+def post_estimation(request: EstimationRequest, *, base_url: str) -> dict[str, object]:
+    """POST a typed estimation request to the FastAPI service.
+
+    :arg request: Validated ``EstimationRequest`` payload.
+    :arg base_url: FastAPI origin (for example ``http://localhost:8080``).
+    :return: Parsed JSON response body.
+    :raises urllib.error.HTTPError: When the API returns a non-2xx status.
+    :raises urllib.error.URLError: When the API is unreachable.
+    :raises json.JSONDecodeError: When the response body is not valid JSON.
+    :raises ValueError: When the response JSON is not an object.
+    """
+    url = f"{base_url}/api/v1/estimate"
+    payload = request.model_dump_json().encode("utf-8")
+    http_request = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(http_request, timeout=120) as response:
+        body = response.read().decode("utf-8")
+    parsed = json.loads(body)
+    if not isinstance(parsed, dict):
+        raise ValueError("Estimation API returned a non-object JSON payload")
+    return parsed
+
 
 st.set_page_config(
-    page_title="Software estimation (CAG)",
+    page_title="Software estimation",
     page_icon=":clipboard:",
     layout="centered",
 )
 
-st.title("Software estimation chat")
+st.title("Software estimation")
 st.caption(
-    "Paste a meeting transcription. The app uses the same CAG prompt and LLM "
-    "service as the FastAPI endpoint."
+    "Fill the form to send a typed ``EstimationRequest`` to the FastAPI service. "
+    "The response is free text for now."
 )
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "last_metrics" not in st.session_state:
-    st.session_state.last_metrics = None
+api_base = _api_base_url()
+st.sidebar.header("API")
+st.sidebar.code(api_base, language=None)
+st.sidebar.caption("Set ``ESTIMATE_API_BASE_URL`` to override.")
 
-with st.sidebar:
-    st.header("Settings")
-    mode = st.radio(
-        "Interaction mode",
-        options=("Streaming", "Complete"),
-        index=0,
-        help=(
-            "Streaming shows the model output token by token. "
-            "Complete waits until the full estimation is ready."
+with st.form("estimation_form", clear_on_submit=False):
+    description = st.text_area(
+        "Project description",
+        height=180,
+        max_chars=MAX_DESCRIPTION_LENGTH,
+        placeholder=(
+            "Describe the product, integrations, timeline, and constraints "
+            f"({MIN_DESCRIPTION_LENGTH}–{MAX_DESCRIPTION_LENGTH} characters)."
         ),
+        help=f"{MIN_DESCRIPTION_LENGTH}–{MAX_DESCRIPTION_LENGTH} characters after trim.",
     )
+    project_type = st.selectbox(
+        "Project type",
+        options=list(ProjectType),
+        format_func=lambda item: item.value,
+        index=list(ProjectType).index(ProjectType.WEB_SAAS),
+    )
+    detail_level = st.selectbox(
+        "Detail level",
+        options=list(DetailLevel),
+        format_func=lambda item: item.value,
+        index=list(DetailLevel).index(DetailLevel.MEDIUM),
+    )
+    output_format = st.selectbox(
+        "Output format",
+        options=list(OutputFormat),
+        format_func=lambda item: item.value,
+        index=list(OutputFormat).index(OutputFormat.PHASES_TABLE),
+    )
+    submitted = st.form_submit_button("Estimate", type="primary")
 
-    st.header("CAG context")
-    with st.expander("System prompt (read-only)", expanded=False):
-        st.text_area(
-            "system_prompt",
-            value=build_system_instructions(),
-            height=280,
-            disabled=True,
-            label_visibility="collapsed",
+if submitted:
+    try:
+        request = EstimationRequest(
+            description=description,
+            project_type=project_type,
+            detail_level=detail_level,
+            output_format=output_format,
         )
-
-    with st.expander("Static CAG examples", expanded=False):
-        total = len(CANONICAL_EXAMPLES)
-        st.caption(f"{total} few-shot example{'s' if total != 1 else ''} loaded")
-        for index, example in enumerate(CANONICAL_EXAMPLES, start=1):
-            with st.expander(f"{index}. {example.title}", expanded=False):
-                st.markdown("**Meeting summary**")
-                st.write(example.meeting_summary)
-                st.markdown(
-                    f"**Totals:** {example.total_hours} h · "
-                    f"{example.total_cost:,} EUR · {example.duration_weeks} weeks"
-                )
-                st.markdown("**Estimation**")
-                st.markdown(example.estimation_markdown)
-
-    st.header("Last call metrics")
-    metrics = st.session_state.last_metrics
-    if metrics is None:
-        st.info("No LLM call yet. Send a transcription to see metrics.")
+    except Exception as exc:  # noqa: BLE001 - show validation errors in the UI
+        st.error(f"Invalid form data: {exc}")
     else:
-        st.metric("Model", metrics["model"])
-        st.metric("Provider", metrics["provider"])
-        st.metric(
-            "Input tokens",
-            metrics["prompt_tokens"]
-            if metrics["prompt_tokens"] is not None
-            else "n/a",
-        )
-        st.metric(
-            "Output tokens",
-            metrics["completion_tokens"]
-            if metrics["completion_tokens"] is not None
-            else "n/a",
-        )
-        st.metric("Response time", f"{metrics['elapsed_seconds']:.2f} s")
-        st.caption(f"Mode: {metrics['mode']}")
-
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
-if prompt := st.chat_input("Paste a meeting transcription to estimate…"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        try:
-            settings = get_settings()
-            provider = settings.llm_provider.value
-            model = settings.resolved_model
-            service = LLMService(settings)
-            started = time.perf_counter()
-
-            if mode == "Streaming":
-                placeholder = st.empty()
-                chunks: list[str] = []
-                for piece in service.generate_stream(prompt):
-                    chunks.append(piece)
-                    placeholder.markdown("".join(chunks))
-                raw = "".join(chunks)
-                elapsed = time.perf_counter() - started
-                reply = format_reply_from_raw_payload(
-                    raw,
-                    model=model,
-                    provider=provider,
-                    prompt_tokens=service.last_prompt_tokens,
-                    completion_tokens=service.last_completion_tokens,
+        with st.spinner("Calling estimation API…"):
+            try:
+                payload = post_estimation(request, base_url=api_base)
+            except urllib.error.HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")
+                st.error(f"API error {exc.code}: {detail}")
+            except urllib.error.URLError as exc:
+                st.error(
+                    f"Cannot reach API at {api_base}. "
+                    f"Is the service running? ({exc.reason})"
                 )
-                placeholder.markdown(reply)
-                st.session_state.last_metrics = {
-                    "model": model,
-                    "provider": provider,
-                    "prompt_tokens": service.last_prompt_tokens,
-                    "completion_tokens": service.last_completion_tokens,
-                    "elapsed_seconds": elapsed,
-                    "mode": mode,
-                }
+            except (json.JSONDecodeError, ValueError) as exc:
+                st.error(f"Unexpected API response: {exc}")
             else:
-                with st.spinner("Generating estimation…"):
-                    result = service.generate(prompt)
-                elapsed = time.perf_counter() - started
-                reply = format_estimation_reply(result)
-                st.markdown(reply)
-                st.session_state.last_metrics = {
-                    "model": result.model,
-                    "provider": result.provider,
-                    "prompt_tokens": result.prompt_tokens,
-                    "completion_tokens": result.completion_tokens,
-                    "elapsed_seconds": elapsed,
-                    "mode": mode,
-                }
-        except Exception as exc:  # noqa: BLE001 - show provider/config errors in UI
-            reply = f"**Error generating estimation:** {exc}"
-            st.error(reply)
-
-    st.session_state.messages.append({"role": "assistant", "content": reply})
-    st.rerun()
+                text = payload.get("text")
+                prompt_version = payload.get("prompt_version")
+                if not isinstance(text, str):
+                    st.error("API response missing string field `text`.")
+                else:
+                    st.success(
+                        f"Estimation ready"
+                        f"{f' (prompt {prompt_version})' if prompt_version else ''}."
+                    )
+                    st.markdown(text)

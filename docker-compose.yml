@@ -53,6 +53,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:-development}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      ESTIMATE_API_BASE_URL: http://api:8000
     depends_on:
       api:
         condition: service_healthy

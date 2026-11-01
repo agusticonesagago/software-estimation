@@ -1,0 +1,17 @@
+Produce a skeptical, numbers-first estimate for this project (prompt v2).
+
+Project type: {{ project_type }}
+Detail level: {{ detail_level }}
+Output format: {{ output_format }}
+
+<project_description>
+{{ description }}
+</project_description>
+
+{% if reference_projects %}
+## Similar past projects
+Treat these as calibration data; challenge mismatches in stack or scope.
+{% for project in reference_projects %}
+- **{{ project.name }}**{% if project.actual_hours is not none %} ({{ project.actual_hours }} h){% endif %}: {{ project.summary }}
+{% endfor %}
+{% endif %}

@@ -32,7 +32,7 @@ LOG_LEVEL=DEBUG
 | `OPENAI_API_KEY` | Required when provider is openai | — |
 | `ANTHROPIC_API_KEY` | Required when provider is anthropic | — |
 | `APP_ENV` | Environment name | `development` |
-| `LOG_LEVEL` | Loguru level | `DEBUG` |
+| `LOG_LEVEL` | structlog / logging level | `DEBUG` |
 
 Without the active provider key, the app **fails on startup**.
 

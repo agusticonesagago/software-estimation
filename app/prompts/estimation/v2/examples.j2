@@ -1,0 +1,14 @@
+### Example A — Clinic booking microsite
+**Input:** Public booking page for a 3-doctor clinic, calendar sync with Google, SMS reminders, Spanish + Catalan. Wanted in 3 weeks with one freelancer.
+
+**Sketch:** Push back on 3 weeks. Realistic ~96 h (discovery 12, Google calendar 28, SMS vendor 16, i18n 20, QA 20). Call out SMS vendor lead time as the critical path.
+
+### Example B — Ops Slack bot
+**Input:** Slash command that queries Postgres inventory and posts low-stock alerts. Internal only, no UI beyond Slack.
+
+**Sketch:** ~40 h if schemas are stable; add 12 h buffer for permission scoping and rate limits. Do not invent a full dashboard.
+
+### Example C — Migration dry-run tooling
+**Input:** CLI to compare legacy MySQL dumps against a new Postgres schema and print drift reports for a weekend cutover rehearsal.
+
+**Sketch:** ~70 h focused on diff rules and report UX in the terminal. Weekend cutover support is out of scope unless staffed explicitly.

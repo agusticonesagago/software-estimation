@@ -31,7 +31,9 @@ class Settings(BaseSettings):
     log_level: str = "DEBUG"
 
     default_openai_model: str = Field(default="gpt-4o-mini", exclude=True)
-    default_anthropic_model: str = Field(default="claude-haiku-4-5", exclude=True)
+    default_anthropic_model: str = Field(
+        default="claude-haiku-4-5-20251001", exclude=True
+    )
 
     @model_validator(mode="after")
     def validate_provider_and_model(self) -> "Settings":

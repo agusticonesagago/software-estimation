@@ -50,11 +50,11 @@ System prompt order (important):
 | `app/schemas/` | HTTP contracts (`estimation.py`) and LLM contracts (`llm.py`) |
 | `app/context/examples.py` | Static few-shots (`CANONICAL_EXAMPLES`) |
 | `app/config.py` | Settings from `.env` |
-| `app/logging_config.py` | Loguru + input/output traces |
+| `app/logging_config.py` | structlog + input/output traces |
 
 ## Traceability
 
-Each estimation gets a `request_id`. Loguru records:
+Each estimation gets a `request_id`. structlog records:
 
 - `estimate.user_input` — transcription  
 - `estimate.model_output` — estimation, confidence, tokens  

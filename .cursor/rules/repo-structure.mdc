@@ -16,11 +16,14 @@ software-estimation/
 │   │   └── estimations.py      # POST /estimate
 │   ├── services/               # Business / LLM logic (no HTTP)
 │   │   ├── llm_service.py      # LiteLLM provider-agnostic I/O
-│   │   └── prompts.py          # CAG system prompt builders
+│   │   └── prompts.py          # Legacy CAG string builders (being replaced)
+│   ├── prompts/                # Versioned Jinja2 estimation templates
+│   │   ├── loader.py           # render_estimation_prompt(request, version)
+│   │   └── estimation/v1/      # system.j2, user.j2, examples.j2
 │   ├── schemas/                # Pydantic request/response models
 │   │   ├── estimation.py       # API request/response
 │   │   └── llm.py              # LLM JSON payload + LLMResult
-│   └── context/                # Static CAG prompt data
+│   └── context/                # Static CAG prompt data (legacy few-shots)
 │       └── examples.py         # CANONICAL_EXAMPLES few-shots + formatters
 ├── docs/                       # Project documentation
 ├── .devcontainer/              # Dev Containers (Cursor / VS Code)
@@ -48,9 +51,10 @@ software-estimation/
 |---|---|
 | New HTTP endpoint | `app/routers/` + wire in `main.py` |
 | LLM provider I/O | `app/services/llm_service.py` |
-| CAG system prompt builders | `app/services/prompts.py` |
+| CAG system prompt builders (legacy) | `app/services/prompts.py` |
+| Versioned Jinja2 prompts | `app/prompts/estimation/<version>/` + `loader.py` |
 | Request/response shapes | `app/schemas/` |
-| Static few-shot / CAG examples | `app/context/examples.py` (`CANONICAL_EXAMPLES`) |
+| Static few-shot / CAG examples (legacy) | `app/context/examples.py` (`CANONICAL_EXAMPLES`) |
 | Env settings | `app/config.py` + `.env.example` |
 | Automated tests | `tests/unit|integration|e2e/` (see `testing-*.mdc`) |
 | CI | `.github/workflows/` |

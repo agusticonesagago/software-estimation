@@ -29,14 +29,14 @@ OPENAPI_TAGS = [
 OPENAPI_DESCRIPTION = """
 ## Overview
 
-**software-estimation** turns a meeting transcription into a structured software
-estimation (Markdown) using **CAG** (Cache-Augmented Generation).
+**software-estimation** turns a typed project description into a free-text
+software estimation (Markdown) using an LLM provider (OpenAI or Anthropic).
 
-Static few-shot examples live in `app/context/examples.py`
-(`CANONICAL_EXAMPLES`) and are injected into every LLM system prompt. There is
-no database, no vector retrieval, and no multi-turn chat.
-
-
+The client sends a structured `EstimationRequest` (`description`,
+`project_type`, `detail_level`, `output_format`). The service renders Jinja2
+prompts (`app/prompts/estimation/<version>/`) and calls the LLM with separate
+`system` / `user` roles. Pass `?prompt_version=v1|v2` (default `v1`). The
+response is `{ "text": "...", "prompt_version": "..." }`.
 
 ## Authentication
 
@@ -46,8 +46,8 @@ server environment variables (`OPENAI_API_KEY` / `ANTHROPIC_API_KEY`).
 ## Typical flow
 
 1. `GET /health` - confirm the service is up
-2. `POST /api/v1/estimate` - send `{ "transcription": "..." }`
-3. Read `estimation` (Markdown) plus `model` / `provider` metadata
+2. `POST /api/v1/estimate` - send a typed `EstimationRequest` JSON body
+3. Read `text` (Markdown) plus `prompt_version`
 """
 
 

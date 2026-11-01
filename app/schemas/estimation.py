@@ -1,140 +1,193 @@
 """Pydantic request/response models exposed in OpenAPI."""
 
-from datetime import datetime, timezone
+from enum import Enum
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-MIN_TRANSCRIPTION_LENGTH = 100
+MIN_DESCRIPTION_LENGTH = 20
+MAX_DESCRIPTION_LENGTH = 2000
+DEFAULT_PROMPT_VERSION = "v1"
 
+# Used by legacy CAG example formatters until Jinja2 templates replace them.
 ExampleFormat = Literal["markdown", "json", "narrative"]
 
 
+class PromptVersion(str, Enum):
+    """Supported Jinja2 prompt template directories under ``app/prompts/estimation/``."""
+
+    V1 = "v1"
+    V2 = "v2"
+
+
+class ProjectType(str, Enum):
+    """High-level project category for estimation prompts."""
+
+    MOBILE_APP = "mobile_app"
+    WEB_SAAS = "web_saas"
+    INTERNAL_TOOL = "internal_tool"
+    DATA_PIPELINE = "data_pipeline"
+
+
+class DetailLevel(str, Enum):
+    """How much detail the estimation should include."""
+
+    SUMMARY = "summary"
+    MEDIUM = "medium"
+    DETAILED = "detailed"
+
+
+class OutputFormat(str, Enum):
+    """Preferred shape of the free-text estimation output."""
+
+    PHASES_TABLE = "phases_table"
+    LINE_ITEMS = "line_items"
+    NARRATIVE = "narrative"
+
+
+class ReferenceProject(BaseModel):
+    """A past project used as optional estimation context."""
+
+    name: str = Field(
+        ...,
+        min_length=1,
+        max_length=200,
+        description="Short name of the similar past project.",
+        examples=["Warehouse alerts MVP"],
+    )
+    summary: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="What was built and any outcome notes useful for comparison.",
+        examples=[
+            "React dashboard + Slack alerts; 96 hours over 4 weeks with one full-stack."
+        ],
+    )
+    actual_hours: int | None = Field(
+        default=None,
+        ge=0,
+        description="Actual delivery hours when known; omit if unknown.",
+        examples=[96],
+    )
+
+
 class EstimationRequest(BaseModel):
-    """Payload for generating a software estimation from a meeting transcription."""
+    """Typed payload for generating a software estimation."""
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
                 {
-                    "transcription": (
-                        "In the meeting with the marketing team, the client explained "
-                        "they need a landing page with a contact form, HubSpot CRM "
-                        "integration, and a blog section with a WYSIWYG editor. "
-                        "Ideal timeline: 4 weeks. Design already exists in Figma."
-                    )
+                    "description": (
+                        "Build a B2B SaaS dashboard for inventory alerts with "
+                        "role-based access, Slack notifications, and CSV export. "
+                        "MVP in about 8 weeks; design is not ready yet."
+                    ),
+                    "project_type": "web_saas",
+                    "detail_level": "medium",
+                    "output_format": "phases_table",
+                    "reference_projects": [
+                        {
+                            "name": "Warehouse alerts MVP",
+                            "summary": (
+                                "React dashboard + Slack alerts; delivered in "
+                                "4 weeks by one full-stack engineer."
+                            ),
+                            "actual_hours": 96,
+                        }
+                    ],
                 }
             ]
         }
     )
 
-    transcription: str = Field(
+    description: str = Field(
         ...,
-        min_length=MIN_TRANSCRIPTION_LENGTH,
+        min_length=MIN_DESCRIPTION_LENGTH,
+        max_length=MAX_DESCRIPTION_LENGTH,
         description=(
-            "Raw meeting transcription to turn into a software estimation. "
-            f"Must be at least {MIN_TRANSCRIPTION_LENGTH} characters after trimming "
-            "whitespace; shorter values return HTTP 422."
+            "Project description to estimate. "
+            f"Must be {MIN_DESCRIPTION_LENGTH}–{MAX_DESCRIPTION_LENGTH} characters "
+            "after trimming whitespace."
         ),
         examples=[
-            "Client needs a landing page with contact form and HubSpot integration "
-            "in 4 weeks. Design is ready in Figma. Scope includes SEO basics and "
-            "a small blog section with a WYSIWYG editor."
+            "Build a B2B SaaS dashboard for inventory alerts with role-based "
+            "access, Slack notifications, and CSV export."
         ],
     )
+    project_type: ProjectType = Field(
+        ...,
+        description="Project category used to steer the estimation prompt.",
+        examples=["web_saas"],
+    )
+    detail_level: DetailLevel = Field(
+        ...,
+        description="Amount of detail expected in the estimation.",
+        examples=["medium"],
+    )
+    output_format: OutputFormat = Field(
+        ...,
+        description="Preferred free-text layout for the estimation.",
+        examples=["phases_table"],
+    )
+    reference_projects: list[ReferenceProject] | None = Field(
+        default=None,
+        description=(
+            "Optional similar past projects to ground the estimate. "
+            "Omitted or null means no reference context is injected into the prompt."
+        ),
+    )
 
-    @field_validator("transcription")
+    @field_validator("description")
     @classmethod
-    def transcription_must_meet_minimum_length(cls, value: str) -> str:
-        """Reject blank or too-short transcriptions after trimming.
+    def description_must_meet_bounds(cls, value: str) -> str:
+        """Reject blank or out-of-bounds descriptions after trimming.
 
-        :arg value: Raw transcription from the request body.
-        :return: Stripped transcription when it meets the minimum length.
-        :raises ValueError: If the stripped text is shorter than
-            ``MIN_TRANSCRIPTION_LENGTH``.
+        :arg value: Raw project description from the request body.
+        :return: Stripped description when it meets length bounds.
+        :raises ValueError: If the stripped text is outside the allowed range.
         """
         cleaned = value.strip()
-        if len(cleaned) < MIN_TRANSCRIPTION_LENGTH:
+        if len(cleaned) < MIN_DESCRIPTION_LENGTH:
             raise ValueError(
-                f"transcription must be at least {MIN_TRANSCRIPTION_LENGTH} "
+                f"description must be at least {MIN_DESCRIPTION_LENGTH} "
+                f"characters after trimming whitespace (got {len(cleaned)})"
+            )
+        if len(cleaned) > MAX_DESCRIPTION_LENGTH:
+            raise ValueError(
+                f"description must be at most {MAX_DESCRIPTION_LENGTH} "
                 f"characters after trimming whitespace (got {len(cleaned)})"
             )
         return cleaned
 
 
 class EstimationResponse(BaseModel):
-    """Successful estimation generated via CAG + LLM."""
+    """Successful estimation generated via the configured LLM path."""
 
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
                 {
-                    "estimation": (
-                        "## Estimation: Landing + HubSpot blog\n\n"
-                        "### Scope\nMVP landing, form, HubSpot, blog WYSIWYG.\n\n"
-                        "### Task breakdown\n"
-                        "| Task | Hours | Role |\n|---|---:|---|\n"
-                        "| Landing from Figma | 16 | Frontend |\n"
+                    "text": (
+                        "## Estimation: Inventory alerts SaaS\n\n"
+                        "| Phase | Hours | Notes |\n|---|---:|---|\n"
+                        "| Discovery | 16 | Requirements workshop |\n"
                     ),
-                    "confidence": 0.78,
-                    "confidence_rationale": (
-                        "Design exists in Figma and scope is clear; HubSpot plan "
-                        "limits are still unknown."
-                    ),
-                    "model": "gpt-4o-mini",
-                    "provider": "openai",
-                    "prompt_tokens": 4200,
-                    "completion_tokens": 650,
-                    "timestamp": "2026-10-18T18:00:00Z",
+                    "prompt_version": "v1",
                 }
             ]
         }
     )
 
-    estimation: str = Field(
+    text: str = Field(
         ...,
-        description="Generated estimation in Markdown (tasks, hours, team, risks).",
+        description="Generated estimation as free-text Markdown (or narrative).",
     )
-    confidence: float = Field(
+    prompt_version: str = Field(
         ...,
-        ge=0.0,
-        le=1.0,
-        description=(
-            "Model self-assessed confidence for this estimate "
-            "(0.0 = guess, 1.0 = very sure)."
-        ),
-        examples=[0.78],
-    )
-    confidence_rationale: str = Field(
-        ...,
-        description="Short explanation of why this confidence value was chosen.",
-        examples=[
-            "Clear Figma design and timeline; HubSpot plan limits unknown."
-        ],
-    )
-    model: str = Field(
-        ...,
-        description="LLM model id used for this response.",
-        examples=["gpt-4o-mini", "claude-haiku-4-5"],
-    )
-    provider: str = Field(
-        ...,
-        description="LLM provider used for this response.",
-        examples=["openai", "anthropic"],
-    )
-    prompt_tokens: int | None = Field(
-        default=None,
-        description="Input/prompt tokens reported by the provider, if available.",
-        ge=0,
-    )
-    completion_tokens: int | None = Field(
-        default=None,
-        description="Completion/output tokens reported by the provider, if available.",
-        ge=0,
-    )
-    timestamp: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc),
-        description="UTC timestamp when the estimation was generated.",
+        description="Prompt template version used to build system/user messages.",
+        examples=["v1"],
     )
 
 
@@ -163,7 +216,7 @@ class ErrorResponse(BaseModel):
                     "detail": [
                         {
                             "type": "missing",
-                            "loc": ["body", "transcription"],
+                            "loc": ["body", "description"],
                             "msg": "Field required",
                             "input": {},
                         }

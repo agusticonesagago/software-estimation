@@ -1,56 +1,57 @@
-"""Application logging setup with Loguru for request/model traceability."""
+"""Application logging setup with structlog for request/model traceability."""
 
 from __future__ import annotations
 
+import logging
 import sys
 from typing import Any
 
-from loguru import logger
+import structlog
 
 _CONFIGURED = False
 
 
 def configure_logging(level: str = "INFO") -> None:
-    """Configure Loguru sinks once for the API process.
+    """Configure structlog processors and filtering for the API process.
+
+    Uses a pretty console renderer when stderr is a TTY; JSON otherwise
+    (typical for Docker / CI).
 
     :arg level: Log level name (e.g. ``DEBUG``, ``INFO``).
     :return: None.
     :raises: Does not raise under normal operation.
     """
     global _CONFIGURED
-    logger.remove()
-    logger.add(
-        sys.stdout,
-        level=level.upper(),
-        format=(
-            "{time:YYYY-MM-DDTHH:mm:ssZ} | {level:<8} | "
-            "{name}:{function}:{line} | {message}"
-        ),
-        enqueue=False,
-        backtrace=False,
-        diagnose=False,
+    log_level = getattr(logging, level.upper(), logging.INFO)
+
+    shared_processors: list[Any] = [
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+    ]
+    if sys.stderr.isatty():
+        processors = shared_processors + [structlog.dev.ConsoleRenderer()]
+    else:
+        processors = shared_processors + [
+            structlog.processors.format_exc_info,
+            structlog.processors.JSONRenderer(),
+        ]
+
+    structlog.configure(
+        processors=processors,
+        wrapper_class=structlog.make_filtering_bound_logger(log_level),
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(file=sys.stdout),
+        cache_logger_on_first_use=False,
     )
     _CONFIGURED = True
 
 
-def get_tracer_logger():
-    """Return the Loguru logger bound for I/O traceability.
+def get_tracer_logger() -> Any:
+    """Return a structlog logger bound for I/O traceability.
 
-    :return: Loguru logger instance (optionally bound with ``component=trace``).
+    :return: Bound structlog logger with ``component=trace``.
     :raises: Does not raise under normal operation.
     """
-    return logger.bind(component="trace")
-
-
-def format_trace_message(event: str, **fields: Any) -> str:
-    """Build a single-line trace message with searchable key=value fields.
-
-    :arg event: Short event name (e.g. ``estimate.user_input``).
-    :arg fields: Arbitrary serializable fields (no secrets).
-    :return: Formatted log message.
-    :raises: Does not raise under normal operation.
-    """
-    parts = [event]
-    for key, value in fields.items():
-        parts.append(f"{key}={value!r}")
-    return " | ".join(parts)
+    return structlog.get_logger("trace").bind(component="trace")

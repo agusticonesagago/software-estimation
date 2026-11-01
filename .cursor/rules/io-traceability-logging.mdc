@@ -13,18 +13,19 @@ On each estimation (and similar LLM endpoints):
 
 | Side | Fields |
 |---|---|
-| User input | `request_id`, endpoint, `transcription` (full text) |
+| User input | `request_id`, endpoint, `description` (full text), enums, `prompt_version` |
 | Model output | `request_id`, `provider`, `model`, `estimation` (full text), token counts if available |
 | Failures | `request_id`, error class/message (no API keys) |
+| Prompt render | `prompt_version`, `prompt_hash` (from the Jinja loader) |
 
-Use **Loguru** (`app.logging_config`) and a shared `request_id` across the request.
+Use **structlog** (`app.logging_config`) and a shared `request_id` across the request.
 
 ## Rules
 
 - Log **before** the LLM call (input) and **after** success (output)
 - On provider errors, log the failure with the same `request_id`
 - **Never** log API keys, raw `.env`, or Authorization headers
-- Prefer structured `logger.info("...", extra={...})` so fields are searchable
+- Prefer structured events: `logger.info("event.name", field=value, ...)`
 - OpenAPI `json_schema_extra` / `examples` are **docs only** — they are not runtime responses and must not replace tracing
 
 ## Do not

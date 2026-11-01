@@ -16,7 +16,7 @@ os.environ.setdefault("LOG_LEVEL", "INFO")
 
 from app.config import get_settings  # noqa: E402
 from app.main import app  # noqa: E402
-from app.schemas.estimation import MIN_TRANSCRIPTION_LENGTH  # noqa: E402
+from app.schemas.estimation import MIN_DESCRIPTION_LENGTH  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -42,16 +42,32 @@ def client() -> TestClient:
 
 
 @pytest.fixture
-def valid_transcription() -> str:
-    """Return a transcription that meets the minimum length.
+def valid_description() -> str:
+    """Return a project description that meets the minimum length.
 
-    :return: Sample transcription string.
+    :return: Sample description string.
     :raises: Does not raise under normal operation.
     """
     base = (
-        "Client needs a landing page with contact form, HubSpot CRM integration, "
-        "and a blog with WYSIWYG. Timeline: 4 weeks. Design is ready in Figma."
+        "Build a B2B SaaS dashboard for inventory alerts with role-based access, "
+        "Slack notifications, and CSV export."
     )
-    if len(base) < MIN_TRANSCRIPTION_LENGTH:
-        base = base + (" extra detail." * 10)
-    return base[: max(MIN_TRANSCRIPTION_LENGTH, len(base))]
+    if len(base) < MIN_DESCRIPTION_LENGTH:
+        base = base + (" more detail" * 5)
+    return base
+
+
+@pytest.fixture
+def valid_estimate_payload(valid_description: str) -> dict[str, str]:
+    """Return a JSON-ready body for POST /api/v1/estimate.
+
+    :arg valid_description: Description meeting min length.
+    :return: Typed estimation request as a dict of strings.
+    :raises: Does not raise under normal operation.
+    """
+    return {
+        "description": valid_description,
+        "project_type": "web_saas",
+        "detail_level": "medium",
+        "output_format": "phases_table",
+    }

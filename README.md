@@ -1,6 +1,6 @@
 # software-estimation
 
-FastAPI service that turns a meeting transcription into a software estimation using **CAG** (Cache-Augmented Generation): static few-shot examples are injected into the system prompt on every request. No database, no retrieval, no embeddings.
+FastAPI service that turns a **typed** project description into a software estimation. The Streamlit client is a form (not a chat) that `POST`s an `EstimationRequest` to the API. Response is free-text Markdown plus `prompt_version`.
 
 **Docs:** [docs/](docs/README.md) — [setup](docs/setup.md) · [architecture](docs/architecture.md) · [API](docs/api.md) · [development](docs/development.md)
 
@@ -49,6 +49,7 @@ cp .env.example .env
 | `ANTHROPIC_API_KEY` | Required if provider is `anthropic` | — |
 | `APP_ENV` | Environment name | `development` |
 | `LOG_LEVEL` | Log level | `DEBUG` |
+| `ESTIMATE_API_BASE_URL` | Base URL used by the Streamlit form | `http://localhost:8080` |
 
 `.env` is gitignored. Never commit real keys.
 
@@ -59,27 +60,22 @@ make run
 # equivalent: uv run uvicorn app.main:app --reload
 ```
 
-### Streamlit chat
+### Streamlit form
 
 ```bash
-make chat
+make run    # terminal 1 — API on :8080
+make chat   # terminal 2 — form on :8501
 # equivalent: uv run streamlit run streamlit_app.py
 ```
 
-Paste a meeting transcription in the chat. Uses the same CAG system prompt and
-LLM service as the API; keys come from ``.env``.
-
-In the sidebar:
-
-- **Interaction mode** — Streaming (token by token) or Complete (full reply)
-- **CAG context** — active system instructions + static few-shot examples (read-only)
-- **Last call metrics** — model, input/output tokens, response time
+Fill description + enums and submit. The UI builds an `EstimationRequest` and
+`POST`s JSON to `{ESTIMATE_API_BASE_URL}/api/v1/estimate`.
 
 | Target | What it does |
 |---|---|
 | `make setup` | `uv sync` + create `.env` from example if missing |
 | `make run` | Start API with hot reload |
-| `make chat` | Start Streamlit chat UI (`streamlit_app.py`) |
+| `make chat` | Start Streamlit estimation form (`streamlit_app.py`) |
 | `make health` | `GET /health` |
 | `make estimate` | Sample `POST /api/v1/estimate` |
 | `make docs` | Print Swagger URL |
@@ -135,7 +131,10 @@ Multi-stage image: build with `uv`, run with slim Python. Secrets via `.env` / c
 curl -X POST http://localhost:8080/api/v1/estimate \
   -H "Content-Type: application/json" \
   -d '{
-    "transcription": "En la reunión con el equipo de marketing, el cliente explicó que necesita una landing page con formulario de contacto, integración con su CRM actual (HubSpot), y una sección de blog con editor WYSIWYG. El plazo ideal sería tenerlo listo en 4 semanas. El diseño ya existe en Figma."
+    "description": "Build a B2B SaaS dashboard for inventory alerts with role-based access, Slack notifications, and CSV export. MVP in about 8 weeks.",
+    "project_type": "web_saas",
+    "detail_level": "medium",
+    "output_format": "phases_table"
   }'
 ```
 
@@ -143,12 +142,8 @@ Example response shape:
 
 ```json
 {
-  "estimation": "## Estimación: ...\n\n### Desglose de tareas:\n...",
-  "model": "gpt-4o-mini",
-  "provider": "openai",
-  "prompt_tokens": 1234,
-  "completion_tokens": 456,
-  "timestamp": "2026-10-18T17:00:00"
+  "text": "## Estimation: ...\n\n| Phase | Hours | Notes |\n...",
+  "prompt_version": "v1"
 }
 ```
 
@@ -179,13 +174,12 @@ software-estimation/
 ```
 
 
-## Architecture note (CAG)
+## Architecture note (Part 1)
 
 Every `/api/v1/estimate` call:
 
-1. Loads few-shot examples from `app/context/examples.py`
-2. Builds a system prompt (instructions + examples)
-3. Sends the transcription as the user message
-4. Returns the model estimation as JSON
+1. Validates a typed `EstimationRequest` (description + enums)
+2. Calls the session-03 LLM wrapper with `description` (prompt templates come next)
+3. Returns `{ "text": "...", "prompt_version": "v1" }`
 
-No RAG, no persistence, no multi-turn chat.
+The Streamlit UI is a form that posts that JSON; no multi-turn chat.

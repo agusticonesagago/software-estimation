@@ -43,7 +43,7 @@ def test_openai_defaults_model() -> None:
 
 
 def test_anthropic_defaults_model() -> None:
-    """Default to claude-haiku-4-5 when Anthropic model is omitted.
+    """Default to dated Claude Haiku when Anthropic model is omitted.
 
     :return: None.
     :raises AssertionError: If the default model is wrong.
@@ -54,7 +54,7 @@ def test_anthropic_defaults_model() -> None:
         anthropic_api_key="sk-ant-test",
         llm_model=None,
     )
-    assert settings.resolved_model == "claude-haiku-4-5"
+    assert settings.resolved_model == "claude-haiku-4-5-20251001"
     assert settings.llm_provider is LLMProvider.ANTHROPIC
 
 

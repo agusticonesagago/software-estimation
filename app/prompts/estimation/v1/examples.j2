@@ -1,0 +1,31 @@
+### Example 1 — Internal reporting tool
+**Input (summary):** Replace weekly spreadsheet reporting with a small internal web tool that pulls sales CSVs from S3, shows filters by region, and emails a PDF summary every Monday. Two internal users, SSO not required, ~6 week target.
+
+**Good estimate sketch:**
+| Phase | Hours | Role | Notes | Confidence % |
+|---|---:|---|---|---:|
+| Discovery & data mapping | 12 | Analyst | Confirm S3 layout and PDF fields | 80 |
+| Backend CSV ingest + jobs | 28 | Backend | Scheduled Monday job | 70 |
+| Simple React dashboard | 24 | Frontend | Region filters only | 75 |
+| PDF email delivery | 10 | Backend | SMTP already available | 65 |
+| QA + hardening | 14 | Full-stack | Sample week dry-run | 70 |
+
+Totals: ~88 h · ~3–4 weeks calendar with one full-stack engineer.
+
+### Example 2 — Mobile field-inspection MVP
+**Input (summary):** Offline-first Android app for inspectors to capture photos, GPS, and a fixed checklist, then sync when online. No iOS in v1. Backend already exposes REST; need auth token storage and conflict handling for two concurrent edits.
+
+**Good estimate sketch:**
+- Android offline store + sync queue — 40 h (Mobile)
+- Camera + checklist UI — 32 h (Mobile)
+- Token auth & secure storage — 12 h (Mobile)
+- Conflict merge rules with API — 16 h (Mobile + Backend liaison)
+- Device QA on 3 phone models — 18 h (QA)
+
+Totals: ~118 h · ~5–6 weeks with one Android engineer.
+
+### Example 3 — Batch analytics pipeline
+**Input (summary):** Nightly pipeline that lands warehouse events from Kafka into a curated Iceberg table, runs three aggregate jobs, and publishes freshness metrics to Grafana. Team already runs Airflow.
+
+**Good estimate sketch:**
+Start with schema contracts and dead-letter handling, then Airflow DAGs for land → curate → aggregate. Budget roughly two weeks for Kafka consumer hardening, one week for Iceberg table design, one week for aggregates and Grafana panels, plus a short buffer for late-arriving events. Call out assumptions about existing cluster capacity and retention.

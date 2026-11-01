@@ -20,17 +20,17 @@ setup: sync ## Sync deps and create .env from example if missing
 run: ## Start API with hot reload
 	uv run uvicorn app.main:app --reload --host $${HOST:-$(HOST)} --port $${PORT:-$(PORT)}
 
-chat: ## Start Streamlit chat UI (CAG estimation)
+chat: ## Start Streamlit estimation form UI
 	uv run streamlit run streamlit_app.py
 
 health: ## GET /health
 	curl -sS $(BASE_URL)/health
 	@echo
 
-estimate: ## POST /api/v1/estimate with sample transcription
+estimate: ## POST /api/v1/estimate with sample typed payload
 	curl -sS -X POST $(BASE_URL)/api/v1/estimate \
 		-H "Content-Type: application/json" \
-		-d '{"transcription":"En la reunión con el equipo de marketing, el cliente explicó que necesita una landing page con formulario de contacto, integración con su CRM actual (HubSpot), y una sección de blog con editor WYSIWYG. El plazo ideal sería tenerlo listo en 4 semanas. El diseño ya existe en Figma."}'
+		-d '{"description":"Build a B2B SaaS dashboard for inventory alerts with role-based access, Slack notifications, and CSV export. MVP in about 8 weeks.","project_type":"web_saas","detail_level":"medium","output_format":"phases_table"}'
 	@echo
 
 docs: ## Print Swagger UI URL
@@ -79,7 +79,7 @@ docker-stop: ## Stop the Docker container
 docker-up: ## Start API + Streamlit via docker compose
 	docker compose up --build -d
 	@echo "API:  http://localhost:8080/docs"
-	@echo "Chat: http://localhost:8501"
+	@echo "Form: http://localhost:8501"
 
 docker-down: ## Stop docker compose services
 	docker compose down
