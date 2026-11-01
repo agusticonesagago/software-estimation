@@ -1,1 +1,1 @@
-"""Software estimation FastAPI application (CAG)."""
+"""Software estimation FastAPI application."""

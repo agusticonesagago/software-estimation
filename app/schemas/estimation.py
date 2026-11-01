@@ -1,16 +1,12 @@
 """Pydantic request/response models exposed in OpenAPI."""
 
 from enum import Enum
-from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 MIN_DESCRIPTION_LENGTH = 20
 MAX_DESCRIPTION_LENGTH = 2000
 DEFAULT_PROMPT_VERSION = "v1"
-
-# Used by legacy CAG example formatters until Jinja2 templates replace them.
-ExampleFormat = Literal["markdown", "json", "narrative"]
 
 
 class PromptVersion(str, Enum):

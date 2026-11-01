@@ -1,4 +1,4 @@
-"""FastAPI entrypoint for the software-estimation CAG API."""
+"""FastAPI entrypoint for the software-estimation API."""
 
 from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
@@ -20,8 +20,8 @@ OPENAPI_TAGS = [
     {
         "name": "estimations",
         "description": (
-            "Software estimation endpoints powered by CAG + an LLM provider "
-            "(OpenAI or Anthropic)."
+            "Software estimation endpoints powered by versioned Jinja2 prompts "
+            "and an LLM provider (OpenAI or Anthropic)."
         ),
     },
 ]
@@ -66,7 +66,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title="software-estimation",
-    summary="CAG-based software estimation API",
+    summary="Typed software estimation API with versioned Jinja2 prompts",
     description=OPENAPI_DESCRIPTION,
     version="0.1.0",
     lifespan=lifespan,

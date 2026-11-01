@@ -10,7 +10,7 @@ Follow the Practical Test Pyramid / GitLab “small tests”: **fast, isolated, 
 
 ## What belongs here
 
-- Pure functions and validators (`schemas`, CAG examples module, prompt builders)
+- Pure functions and validators (`schemas`, Jinja loader / template renders)
 - Branching and error messages without HTTP or network
 - Edge cases: empty input, min length, missing files, bad provider config
 
@@ -24,11 +24,8 @@ Follow the Practical Test Pyramid / GitLab “small tests”: **fast, isolated, 
 
 ## Example targets in this repo
 
-- `EstimationRequest` min length / strip validation
-- `CANONICAL_EXAMPLES` has ≥2 entries with structured fields + Markdown
-- `format_examples_for_prompt` (markdown/json/narrative)
-- `load_cag_examples_markdown` markers
-- `app.services.prompts.build_system_prompt` includes CAG delimiters
+- `EstimationRequest` bounds / enums / optional `reference_projects`
+- `render_estimation_prompt` template conditionals (`tests/prompts/`)
 - `Settings.validate_provider_and_model` missing API key
 
 ## Do not

@@ -49,4 +49,4 @@ Sources: [Python security considerations](https://docs.python.org/3/library/secu
 
 - LLM API keys only via Settings / `.env` (gitignored)
 - Do not send secrets in estimate responses or OpenAPI examples
-- Bound and validate `transcription` length before calling providers (cost / abuse)
+- Bound and validate `description` length before calling providers (cost / abuse)

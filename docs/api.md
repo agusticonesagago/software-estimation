@@ -18,61 +18,57 @@ OpenAPI contact: Agustí Conesa Gago · License: Proprietary.
 
 ### `POST /api/v1/estimate`
 
+Optional query: `prompt_version=v1|v2` (default `v1`).
+
 **Request**
 
 ```json
 {
-  "transcription": "In the meeting the client explained they need..."
+  "description": "Build a B2B SaaS dashboard for inventory alerts with Slack notifications and CSV export.",
+  "project_type": "web_saas",
+  "detail_level": "medium",
+  "output_format": "phases_table",
+  "reference_projects": null
 }
 ```
 
 Rules:
 
-- Required field: `transcription`
-- Minimum **100** characters after `strip`
-- Shorter values → **422**
+- `description`: 20–2000 characters after `strip`
+- Enums: `project_type`, `detail_level`, `output_format`
+- `reference_projects` optional
+- Invalid body/query → **422**
 
 **Response 200**
 
 ```json
 {
-  "estimation": "## Estimation: ...\n\n### ...",
-  "confidence": 0.78,
-  "confidence_rationale": "Clear scope; HubSpot plan limits unknown.",
-  "model": "gpt-4o-mini",
-  "provider": "openai",
-  "prompt_tokens": 3100,
-  "completion_tokens": 250,
-  "timestamp": "2026-10-18T18:00:00Z"
+  "text": "## Estimation: ...\n\n| Phase | Hours | ...",
+  "prompt_version": "v1"
 }
 ```
-
-| Field | Meaning |
-|---|---|
-| `estimation` | Markdown (scope, tasks, team, totals, risks) |
-| `confidence` | 0.0–1.0 (how sure the model is about the estimate) |
-| `confidence_rationale` | Why that value |
-| `model` / `provider` | Model and provider used |
-| `prompt_tokens` / `completion_tokens` | Token usage when reported |
 
 **Errors**
 
 | Status | When |
 |---|---|
-| 422 | Invalid body / short transcription |
-| 502 | LLM provider error or invalid model JSON |
+| 422 | Invalid body / enums / prompt_version |
+| 502 | LLM provider error |
 
 ## curl example
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/estimate \
+curl -X POST "http://localhost:8080/api/v1/estimate?prompt_version=v1" \
   -H "Content-Type: application/json" \
   -d '{
-    "transcription": "In the meeting with the marketing team, the client explained they need a landing page with a contact form, HubSpot CRM integration, and a blog section with a WYSIWYG editor. Ideal timeline: 4 weeks. Design already exists in Figma."
+    "description": "Build a B2B SaaS dashboard for inventory alerts with role-based access, Slack notifications, and CSV export. MVP in about 8 weeks.",
+    "project_type": "web_saas",
+    "detail_level": "medium",
+    "output_format": "phases_table"
   }'
 ```
 
 ## Schemas (code)
 
 - HTTP: `app/schemas/estimation.py` — `EstimationRequest` / `EstimationResponse`
-- LLM: `app/schemas/llm.py` — `LLMEstimationPayload` / `LLMResult`
+- Internal LLM result: `app/schemas/llm.py` — `LLMResult`

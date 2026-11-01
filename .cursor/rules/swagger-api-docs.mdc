@@ -10,7 +10,7 @@ Every HTTP API endpoint **must** appear in Swagger UI at `/docs` (OpenAPI at `/o
 ## Mandatory on each route decorator
 
 - `summary` — short English title
-- `description` — what it does, side effects, CAG/LLM notes if any
+- `description` — what it does, side effects, prompt/LLM notes if any
 - `tags` — must match a tag in `app.main.OPENAPI_TAGS`
 - `response_model` — Pydantic model (never a bare `dict` for JSON APIs)
 - `status_code` — explicit success status

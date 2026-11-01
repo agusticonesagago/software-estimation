@@ -1,43 +1,29 @@
 # Architecture
 
-## What CAG means here
+## Estimation flow (session 4)
 
-**Cache-Augmented Generation**: every call injects static context (Markdown few-shots) into the system prompt. There is no:
-
-- database
-- retrieval / embeddings (RAG)
-- multi-turn memory
-- estimation persistence
-
-Focus is the prompt and the HTTP → LLM → JSON flow.
+Typed request → versioned Jinja2 prompts → LiteLLM with separate `system` / `user`
+roles → free-text response. No database, no RAG, no multi-turn memory.
 
 ## Request flow
 
 ```text
-POST /api/v1/estimate { transcription }
+POST /api/v1/estimate?prompt_version=v1|v2
+  body: EstimationRequest (description, enums, optional reference_projects)
         │
         ▼
   routers/estimations.py     ← HTTP, Pydantic validation, I/O logging
         │
         ▼
-  services/prompts.py        ← system prompt (intro → examples → validations)
-  services/llm_service.py    ← LiteLLM completion (provider-agnostic)
-        │                     ← temperature = 0.0
-        │                     ← OpenAI / Anthropic via LiteLLM (JSON)
-        ▼
-  schemas/llm.py             ← parse LLMEstimationPayload
+  prompts/loader.py          ← render_estimation_prompt → (system, user)
+  prompts/estimation/<ver>/  ← system.j2, user.j2, examples.j2
         │
         ▼
-  EstimationResponse         ← estimation + confidence + metadata
+  services/llm_service.py    ← LiteLLM completion (two roles)
+        │
+        ▼
+  EstimationResponse         ← { text, prompt_version }
 ```
-
-System prompt order (important):
-
-1. **Intro** — role and estimation structure  
-2. **CAG examples** — `app/context/examples.py` (`CANONICAL_EXAMPLES`) with clear delimiters  
-
-
-3. **Validations** — final checklist + required JSON format  
 
 ## Layers
 
@@ -45,23 +31,19 @@ System prompt order (important):
 |---|---|
 | `app/main.py` | FastAPI, lifespan, `/`, `/health`, OpenAPI |
 | `app/routers/` | HTTP only (does not call the LLM SDK) |
+| `app/prompts/` | Versioned Jinja2 templates + loader |
 | `app/services/llm_service.py` | LiteLLM I/O (`openai/` / `anthropic/` models) |
-| `app/services/prompts.py` | CAG system prompt (intro + examples + validations) |
-| `app/schemas/` | HTTP contracts (`estimation.py`) and LLM contracts (`llm.py`) |
-| `app/context/examples.py` | Static few-shots (`CANONICAL_EXAMPLES`) |
+| `app/schemas/` | HTTP contracts (`estimation.py`) and LLM helpers (`llm.py`) |
 | `app/config.py` | Settings from `.env` |
 | `app/logging_config.py` | structlog + input/output traces |
+
+Few-shots live in `app/prompts/estimation/<version>/examples.j2`, not in Python modules.
 
 ## Traceability
 
 Each estimation gets a `request_id`. structlog records:
 
-- `estimate.user_input` — transcription  
-- `estimate.model_output` — estimation, confidence, tokens  
-- `estimate.model_error` — provider failures  
-
-API keys are never logged.
-
-## Temperature
-
-`LLM_TEMPERATURE = 0.0` for more deterministic answers aligned with CAG examples.
+- `estimate.user_input` — description + enums + prompt_version  
+- `prompt.rendered` — prompt_version + content hash  
+- `estimate.model_output` — estimation text, provider, tokens  
+- `estimate.model_error` — failures without secrets  

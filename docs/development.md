@@ -38,7 +38,8 @@ On every commit:
 
 | Layer | Path | Focus |
 |---|---|---|
-| Unit | `tests/unit/` | schemas, settings, CAG, LLM parser |
+| Unit | `tests/unit/` | schemas, settings, LLM helpers |
+| Prompts | `tests/prompts/` | Jinja render (no LLM) |
 | Integration | `tests/integration/` | TestClient, mocked LLM, logging |
 | E2E | `tests/e2e/` | docs, health, `/` redirect |
 
@@ -63,8 +64,8 @@ Example: `docs: add project documentation under docs/`
 
 Under `.cursor/rules/` (always-on / by glob): English-only code, repo structure, Sphinx docstrings, OpenAPI/Swagger, mandatory tests, FastAPI/Python security, best practices, I/O logging, Conventional Commits.
 
-## Adding a CAG example
+## Adding a few-shot example
 
-1. Append a `CanonicalExample` to `CANONICAL_EXAMPLES` in `app/context/examples.py`
-2. Keep structured fields (`breakdown`, totals, team) aligned with `estimation_markdown`
-3. `load_cag_examples_markdown()` / `format_examples_for_prompt()` inject them into prompts
+1. Edit `app/prompts/estimation/<version>/examples.j2` (or add a new `vN/` set)
+2. Keep examples plausible and free of secrets
+3. Cover the change with a fast test under `tests/prompts/` (no LLM calls)

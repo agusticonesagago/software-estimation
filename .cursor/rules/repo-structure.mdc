@@ -1,5 +1,5 @@
 ---
-description: Repository layout and where to put new code (CAG FastAPI app)
+description: Repository layout and where to put new code (FastAPI estimation app)
 alwaysApply: true
 ---
 
@@ -15,30 +15,28 @@ software-estimation/
 │   ├── routers/                # HTTP only (no LLM calls)
 │   │   └── estimations.py      # POST /estimate
 │   ├── services/               # Business / LLM logic (no HTTP)
-│   │   ├── llm_service.py      # LiteLLM provider-agnostic I/O
-│   │   └── prompts.py          # Legacy CAG string builders (being replaced)
+│   │   └── llm_service.py      # LiteLLM provider-agnostic I/O
 │   ├── prompts/                # Versioned Jinja2 estimation templates
 │   │   ├── loader.py           # render_estimation_prompt(request, version)
-│   │   └── estimation/v1/      # system.j2, user.j2, examples.j2
-│   ├── schemas/                # Pydantic request/response models
-│   │   ├── estimation.py       # API request/response
-│   │   └── llm.py              # LLM JSON payload + LLMResult
-│   └── context/                # Static CAG prompt data (legacy few-shots)
-│       └── examples.py         # CANONICAL_EXAMPLES few-shots + formatters
+│   │   └── estimation/v1|v2/   # system.j2, user.j2, examples.j2
+│   └── schemas/                # Pydantic request/response models
+│       ├── estimation.py       # API request/response
+│       └── llm.py              # LLM JSON payload + LLMResult
 ├── docs/                       # Project documentation
 ├── .devcontainer/              # Dev Containers (Cursor / VS Code)
 ├── tests/
 │   ├── unit/                   # Fast isolated tests
 │   ├── integration/            # API boundaries (TestClient, mocked LLM)
+│   ├── prompts/                # Jinja template render tests (no LLM)
 │   └── e2e/                    # Critical full-stack / container flows
 ├── .github/workflows/ci.yml    # Docker-first CI
 ├── .cursor/rules/              # Cursor rules (testing, security-fastapi/python, PEP practices, …)
 ├── Dockerfile
-├── docker-compose.yml          # api + Streamlit chat
+├── docker-compose.yml          # api + Streamlit form
 ├── .dockerignore
 ├── .env.example                # No real secrets
 ├── .gitignore                  # Must include .env
-├── streamlit_app.py            # Streamlit chat UI (session exercises)
+├── streamlit_app.py            # Streamlit estimation form
 ├── Makefile
 ├── pyproject.toml
 ├── uv.lock
@@ -51,17 +49,15 @@ software-estimation/
 |---|---|
 | New HTTP endpoint | `app/routers/` + wire in `main.py` |
 | LLM provider I/O | `app/services/llm_service.py` |
-| CAG system prompt builders (legacy) | `app/services/prompts.py` |
-| Versioned Jinja2 prompts | `app/prompts/estimation/<version>/` + `loader.py` |
+| Versioned Jinja2 prompts / few-shots | `app/prompts/estimation/<version>/` + `loader.py` |
 | Request/response shapes | `app/schemas/` |
-| Static few-shot / CAG examples (legacy) | `app/context/examples.py` (`CANONICAL_EXAMPLES`) |
 | Env settings | `app/config.py` + `.env.example` |
-| Automated tests | `tests/unit|integration|e2e/` (see `testing-*.mdc`) |
+| Automated tests | `tests/unit|integration|prompts|e2e/` (see `testing-*.mdc`) |
 | CI | `.github/workflows/` |
 | Container | `Dockerfile` / `.dockerignore` |
 
 ## Boundaries
 
 - Routers call services; services never import FastAPI routers or `Request`/`Response`
-- Context modules are data only; no network I/O
+- Prompt templates are data under `app/prompts/`; no network I/O in the loader beyond logging
 - API keys only via env / Settings — never hardcode

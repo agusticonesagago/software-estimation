@@ -52,8 +52,6 @@ class LLMService:
             estimation=content,
             model=model,
             provider=provider.value,
-            confidence=0.0,
-            confidence_rationale="",
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
         )

@@ -13,7 +13,7 @@ This repo is a **FastAPI** JSON API. Prefer Pydantic validation, dependency inje
 
 - Validate and sanitize all external input (body, query, headers, files, env)
 - Prefer allowlists and Pydantic models (`Field`, `min_length`, enums) over ad-hoc checks
-- Bound expensive fields (e.g. `transcription` length) before calling LLMs
+- Bound expensive fields (e.g. `description` length) before calling LLMs
 
 ## XSS
 

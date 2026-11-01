@@ -28,7 +28,7 @@ tests/
 | Change | Minimum tests |
 |---|---|
 | Schema / validation | `tests/unit/` |
-| CAG loader / prompt builders | `tests/unit/` |
+| Jinja prompt loader / templates | `tests/prompts/` or `tests/unit/` |
 | Router + service wiring | `tests/integration/` (LLM mocked) |
 | Happy-path estimate + health | one thin `tests/e2e/` or CI container smoke |
 

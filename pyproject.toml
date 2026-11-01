@@ -1,7 +1,7 @@
 [project]
 name = "software-estimation"
 version = "0.1.0"
-description = "FastAPI software estimation service using Cache-Augmented Generation (CAG)"
+description = "FastAPI software estimation service with versioned Jinja2 prompts"
 readme = "README.md"
 authors = [
     { name = "Agustí Conesa Gago" },

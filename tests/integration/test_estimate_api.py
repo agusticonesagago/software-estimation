@@ -71,8 +71,6 @@ def test_estimate_returns_text_when_llm_succeeds(
         estimation="## Estimation: Test\n\n### Scope\nDemo",
         model="gpt-4o-mini",
         provider="openai",
-        confidence=0.0,
-        confidence_rationale="",
         prompt_tokens=10,
         completion_tokens=20,
     )
@@ -112,8 +110,6 @@ def test_estimate_accepts_prompt_version_v2_query(
         estimation="## Estimation: V2 path",
         model="gpt-4o-mini",
         provider="openai",
-        confidence=0.0,
-        confidence_rationale="",
         prompt_tokens=1,
         completion_tokens=2,
     )

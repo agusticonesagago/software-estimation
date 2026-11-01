@@ -22,8 +22,6 @@ def test_estimate_logs_user_input_and_model_output(
         estimation="## Estimation: Logged\n\n### Scope\nDemo",
         model="gpt-4o-mini",
         provider="openai",
-        confidence=0.7,
-        confidence_rationale="Logged test",
         prompt_tokens=11,
         completion_tokens=22,
     )

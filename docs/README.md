@@ -1,18 +1,11 @@
-# Documentation — software-estimation
+# Documentation
 
-FastAPI API that generates software estimations from a meeting transcription using **CAG** (Cache-Augmented Generation).
+FastAPI API that generates software estimations from a typed project description
+using versioned Jinja2 prompts and an LLM provider (OpenAI / Anthropic via LiteLLM).
 
-| Document | Contents |
+| Doc | Contents |
 |---|---|
-| [Setup](setup.md) | Install, `.env`, local run, Docker |
-| [Architecture](architecture.md) | Layers, CAG, request flow |
-| [API](api.md) | Endpoints, schemas, Swagger |
-| [Development](development.md) | Tests, CI, Makefile, Cursor rules, commits |
-
-Author: **Agustí Conesa Gago** · License: Proprietary
-
-## Quick links
-
-- Swagger (local): http://localhost:8080/docs  
-- Health: `GET /health`  
-- Estimate: `POST /api/v1/estimate`
+| [Architecture](architecture.md) | Layers, request flow, tracing |
+| [API](api.md) | Endpoints and examples |
+| [Development](development.md) | Local workflow and tests |
+| [Setup](setup.md) | Environment and tooling |

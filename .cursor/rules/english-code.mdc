@@ -17,20 +17,20 @@ All **code** in this repository must be written in English.
 
 ## Allowed exceptions
 
-- Domain quotes inside static CAG examples (e.g. fictional client meeting text) may stay in Spanish if they simulate real meeting transcripts
+- Domain quotes inside Jinja few-shot examples (e.g. fictional client text) may stay in Spanish if they simulate real meeting language
 - User-facing README sections may be bilingual only when documenting for Spanish-speaking readers; prefer English for technical sections
 
 ## Examples
 
 ```python
 # ❌ BAD
-def generar_estimacion(transcripcion: str) -> str:
-    """Genera una estimación a partir de la reunión."""
+def generar_estimacion(descripcion: str) -> str:
+    """Genera una estimación a partir de la descripción."""
     raise ValueError("Falta la clave del proveedor")
 
 # ✅ GOOD
-def generate_estimation(transcription: str) -> str:
-    """Generate an estimation from the meeting transcription."""
+def generate_estimation(description: str) -> str:
+    """Generate an estimation from the project description."""
     raise ValueError("Missing provider API key")
 ```
 

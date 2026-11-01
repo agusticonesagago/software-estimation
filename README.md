@@ -101,7 +101,8 @@ make tests
 
 | Layer | Path | Focus |
 |---|---|---|
-| Unit | `tests/unit/` | schemas, settings, CAG examples, prompt |
+| Unit | `tests/unit/` | schemas, settings, LLM helpers |
+| Prompts | `tests/prompts/` | Jinja template render (no LLM) |
 | Integration | `tests/integration/` | `/health`, `/estimate` with mocked LLM |
 | E2E | `tests/e2e/` | docs + health critical path |
 
@@ -156,9 +157,9 @@ software-estimation/
 │   ├── config.py
 │   ├── logging_config.py
 │   ├── routers/
-│   ├── services/            # llm_service.py (LiteLLM) + prompts.py
-│   ├── schemas/             # HTTP + LLM payloads
-│   └── context/examples.py  # CAG CANONICAL_EXAMPLES few-shots
+│   ├── services/            # llm_service.py (LiteLLM)
+│   ├── prompts/             # Jinja2 estimation templates (v1/v2) + loader
+│   └── schemas/             # HTTP + LLM payloads
 ├── docs/                    # Project documentation
 ├── tests/
 │   ├── unit/
