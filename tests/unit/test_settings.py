@@ -108,3 +108,32 @@ def test_get_settings_returns_cached_instance() -> None:
     second = get_settings()
     assert first is second
     get_settings.cache_clear()
+
+
+def test_session_max_turns_defaults_to_six() -> None:
+    """Default the sliding-window size to six turns.
+
+    :return: None.
+    :raises AssertionError: If the default differs from the exercise value.
+    """
+    settings = Settings(
+        _env_file=None,
+        llm_provider="openai",
+        openai_api_key="sk-test",
+    )
+    assert settings.session_max_turns == 6
+
+
+def test_session_max_turns_rejects_zero() -> None:
+    """Reject non-positive sliding-window sizes.
+
+    :return: None.
+    :raises AssertionError: If zero is accepted.
+    """
+    with pytest.raises(ValidationError):
+        Settings(
+            _env_file=None,
+            llm_provider="openai",
+            openai_api_key="sk-test",
+            session_max_turns=0,
+        )

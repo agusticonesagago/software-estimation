@@ -49,6 +49,7 @@ cp .env.example .env
 | `ANTHROPIC_API_KEY` | Required if provider is `anthropic` | — |
 | `APP_ENV` | Environment name | `development` |
 | `LOG_LEVEL` | Log level | `DEBUG` |
+| `SESSION_MAX_TURNS` | Sliding-window size (user+assistant pairs) | `6` |
 | `ESTIMATE_API_BASE_URL` | Base URL used by the Streamlit form | `http://localhost:8080` |
 
 `.env` is gitignored. Never commit real keys.
@@ -60,16 +61,20 @@ make run
 # equivalent: uv run uvicorn app.main:app --reload
 ```
 
-### Streamlit form
+### Streamlit multi-turn client
 
 ```bash
 make run    # terminal 1 — API on :8080
-make chat   # terminal 2 — form on :8501
+make chat   # terminal 2 — Streamlit on :8501
 # equivalent: uv run streamlit run streamlit_app.py
 ```
 
-Fill description + enums and submit. The UI builds an `EstimationRequest` and
-`POST`s JSON to `{ESTIMATE_API_BASE_URL}/api/v1/estimate`.
+On load the UI calls `POST /api/v1/sessions` and stores `session_id` in
+Streamlit `session_state`. Each turn sends `multipart/form-data`
+(`transcript` + optional `attachments`) to
+`POST /api/v1/sessions/{session_id}/estimate`. The sidebar shows
+`project_metadata` (memory) and a **Nueva conversación** button that creates a
+fresh session and clears local turns.
 
 | Target | What it does |
 |---|---|
@@ -103,7 +108,7 @@ make tests
 |---|---|---|
 | Unit | `tests/unit/` | schemas, settings, LLM helpers |
 | Prompts | `tests/prompts/` | Jinja template render (no LLM) |
-| Integration | `tests/integration/` | `/health`, `/estimate` with mocked LLM |
+| Integration | `tests/integration/` | `/health`, `/estimate`, sessions + `httpx.AsyncClient` |
 | E2E | `tests/e2e/` | docs + health critical path |
 
 LLM providers are **mocked** in tests; no real API calls.
@@ -175,12 +180,57 @@ software-estimation/
 ```
 
 
-## Architecture note (Part 1)
+## Multi-turn sessions (session 05)
+
+1. `POST /api/v1/sessions` → `{ "session_id": "<uuid>" }`
+2. `POST /api/v1/sessions/{session_id}/estimate` as `multipart/form-data`:
+   - `transcript` (string)
+   - `attachments` (optional files)
+3. Reuse the same `session_id` on later turns so in-process history is shared
+
+### Attachment path: **A (provider Files / multimodal)**
+
+We chose **Path A** (not local `pypdf` / `python-docx` extraction) because:
+
+- Less application code: the provider reads the document
+- Better trust that mixed layouts/types are handled by the model stack
+- Ready for PDF and Office-like uploads without maintaining extractors per format
+
+| Provider | Behavior |
+|---|---|
+| OpenAI | Upload via **Files API** (`purpose=user_data`), then **Responses API** with `input_file` + `file_id` (PDF, Word, etc.) |
+| Anthropic | Multimodal `file_data` PDF blocks via LiteLLM (no local text extract); PDF only for now |
+
+### `project_metadata` extraction: **heuristic** (not a second LLM call)
+
+After each multi-turn estimate we update `ProjectMetadata` with regex / allowlist
+parsing over the transcript + estimation (`## Estimation: …`, tech tokens, team
+size phrases, optional Scope section).
+
+Why heuristic for this phase:
+
+- No extra provider call per turn (cheaper and faster)
+- Enough to keep name / stack / scope coherent across turns for the exercise
+- Easy to swap later for an LLM JSON extractor if recall is too weak
+
+The system prompt always includes a `<project_metadata>` block (empty on the
+first turn).
+
+### Sliding window
+
+`ConversationHistory` keeps at most `SESSION_MAX_TURNS` (default **6**)
+user+assistant pairs. The system prompt is an invariant and is regenerated from
+current `project_metadata` inside `to_messages_list()` before each LLM call.
+Oldest pairs are dropped when the window overflows.
+
+The Streamlit client (`streamlit_app.py`) is the multi-turn UI described above.
+
+## Architecture note (one-shot estimate)
 
 Every `/api/v1/estimate` call:
 
 1. Validates a typed `EstimationRequest` (description + enums)
-2. Calls the session-03 LLM wrapper with `description` (prompt templates come next)
+2. Renders Jinja2 prompts and calls the LLM wrapper
 3. Returns `{ "text": "...", "prompt_version": "v1" }`
 
-The Streamlit UI is a form that posts that JSON; no multi-turn chat.
+The Streamlit UI still posts that JSON for the one-shot path.

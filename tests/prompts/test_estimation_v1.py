@@ -13,6 +13,7 @@ from app.schemas.estimation import (
     ProjectType,
     ReferenceProject,
 )
+from app.services.sessions import ProjectMetadata
 
 
 def _request(
@@ -206,3 +207,41 @@ def test_v2_prompt_uses_deliberate_tone_and_examples() -> None:
     assert "Internal reporting tool" not in system
     assert "prompt v2" in user.lower()
     assert "<project_description>" in user
+
+
+def test_system_prompt_project_metadata_block_empty_by_default() -> None:
+    """Always emit ``<project_metadata>`` tags, empty on the first turn.
+
+    :return: None.
+    :raises AssertionError: If the block is missing or prefilled.
+    """
+    system, _ = render_estimation_prompt(_request())
+    assert "<project_metadata>" in system
+    assert "</project_metadata>" in system
+    assert "project_name:" not in system
+    assert "mentioned_technologies:" not in system
+
+
+def test_system_prompt_injects_filled_project_metadata() -> None:
+    """Render known session facts inside ``<project_metadata>``.
+
+    :return: None.
+    :raises AssertionError: If injected fields are missing.
+    """
+    metadata = ProjectMetadata(
+        project_name="Inventory Hub",
+        assumed_team_size=3,
+        mentioned_technologies=["React", "FastAPI"],
+        agreed_scope="MVP inventory alerts with Slack.",
+    )
+    system, _ = render_estimation_prompt(
+        _request(),
+        project_metadata=metadata,
+    )
+    start = system.index("<project_metadata>")
+    end = system.index("</project_metadata>")
+    block = system[start:end]
+    assert "project_name: Inventory Hub" in block
+    assert "assumed_team_size: 3" in block
+    assert "mentioned_technologies: React, FastAPI" in block
+    assert "agreed_scope: MVP inventory alerts with Slack." in block

@@ -17,7 +17,7 @@ from app.schemas.estimation import (
 from app.services.llm_service import generate_estimation
 
 router = APIRouter(tags=["estimations"])
-trace = get_tracer_logger()
+_trace = get_tracer_logger()
 
 _ESTIMATE_BODY_EXAMPLE = {
     "description": (
@@ -104,7 +104,7 @@ def estimate(
     """
     request_id = str(uuid4())
     version = prompt_version.value
-    trace.info(
+    _trace.info(
         "estimate.user_input",
         request_id=request_id,
         endpoint="POST /api/v1/estimate",
@@ -120,7 +120,7 @@ def estimate(
         system, user = render_estimation_prompt(request, version=version)
         result = generate_estimation(system, user)
     except Exception as exc:  # noqa: BLE001 - surface LLM/provider errors as 502
-        trace.exception(
+        _trace.exception(
             "estimate.model_error",
             request_id=request_id,
             endpoint="POST /api/v1/estimate",
@@ -137,7 +137,7 @@ def estimate(
         prompt_version=version,
     )
 
-    trace.info(
+    _trace.info(
         "estimate.model_output",
         request_id=request_id,
         endpoint="POST /api/v1/estimate",

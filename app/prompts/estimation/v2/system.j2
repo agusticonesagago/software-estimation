@@ -6,6 +6,24 @@ PROMPT_VERSION_V2 — prefer skeptical, numbers-first language over soft consult
 - Prefer ranges only when uncertainty is real; otherwise give a single point estimate.
 - Flag schedule risk in one short sentence when the ask is aggressive.
 - Project type for this request: {{ project_type }}.
+- Treat ``<project_metadata>`` as ground truth when filled; do not contradict it.
+
+## Project memory
+Durable facts for this conversation (separate from chat history). Empty on the first turn.
+<project_metadata>
+{% if project_metadata.project_name %}
+project_name: {{ project_metadata.project_name }}
+{% endif %}
+{% if project_metadata.assumed_team_size %}
+assumed_team_size: {{ project_metadata.assumed_team_size }}
+{% endif %}
+{% if project_metadata.mentioned_technologies %}
+mentioned_technologies: {{ project_metadata.mentioned_technologies | join(", ") }}
+{% endif %}
+{% if project_metadata.agreed_scope %}
+agreed_scope: {{ project_metadata.agreed_scope }}
+{% endif %}
+</project_metadata>
 
 ## Output format
 {% if output_format == "phases_table" %}

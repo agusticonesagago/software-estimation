@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     llm_model: str | None = None
     app_env: str = "development"
     log_level: str = "DEBUG"
+    session_max_turns: int = Field(
+        default=6,
+        ge=1,
+        description=(
+            "Sliding-window size for multi-turn sessions: max user+assistant "
+            "pairs retained in ConversationHistory (env: SESSION_MAX_TURNS)."
+        ),
+    )
 
     default_openai_model: str = Field(default="gpt-4o-mini", exclude=True)
     default_anthropic_model: str = Field(

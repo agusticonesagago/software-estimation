@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import os
+from collections.abc import AsyncIterator
 
 import pytest
 from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 
 # Ensure Settings can load before importing the app.
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-placeholder")
@@ -17,6 +19,7 @@ os.environ.setdefault("LOG_LEVEL", "INFO")
 from app.config import get_settings  # noqa: E402
 from app.main import app  # noqa: E402
 from app.schemas.estimation import MIN_DESCRIPTION_LENGTH  # noqa: E402
+from app.services.sessions import session_store  # noqa: E402
 
 
 @pytest.fixture(autouse=True)
@@ -31,6 +34,18 @@ def _clear_settings_cache() -> None:
     get_settings.cache_clear()
 
 
+@pytest.fixture(autouse=True)
+def _clear_session_store() -> None:
+    """Reset in-memory sessions between tests.
+
+    :return: None.
+    :raises: Does not raise under normal operation.
+    """
+    session_store.clear()
+    yield
+    session_store.clear()
+
+
 @pytest.fixture
 def client() -> TestClient:
     """ASGI test client for the FastAPI app.
@@ -39,6 +54,18 @@ def client() -> TestClient:
     :raises: Does not raise under normal operation.
     """
     return TestClient(app)
+
+
+@pytest.fixture
+async def async_client() -> AsyncIterator[AsyncClient]:
+    """Async HTTPX client bound to the FastAPI ASGI app.
+
+    :return: Async iterator yielding a configured ``httpx.AsyncClient``.
+    :raises: Does not raise under normal operation.
+    """
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
 
 
 @pytest.fixture

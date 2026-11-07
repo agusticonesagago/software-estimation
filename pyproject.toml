@@ -12,8 +12,10 @@ dependencies = [
     "fastapi>=0.146.0",
     "jinja2>=3.1.6",
     "litellm>=1.106.0",
+    "openai>=2.54.0",
     "pydantic-settings>=2.16.0",
     "python-dotenv>=1.2.4",
+    "python-multipart>=0.0.32",
     "streamlit>=1.66.1",
     "structlog>=26.1.0",
     "uvicorn[standard]>=0.54.0",
@@ -32,9 +34,11 @@ packages = ["app"]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "httpx2>=2.14.0",
     "pre-commit>=4.7.0",
     "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.1.post1",
     "pytest-cov>=7.1.0",
 ]
 
@@ -42,6 +46,8 @@ dev = [
 testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-q"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
 
 [tool.coverage.run]
 source = ["app"]
