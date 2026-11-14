@@ -10,7 +10,7 @@ repos:
     hooks:
       - id: pytest-coverage-90
         name: pytest coverage ≥ 90%
-        entry: bash -c 'OPENAI_API_KEY="${OPENAI_API_KEY:-sk-ci-placeholder}" LLM_PROVIDER="${LLM_PROVIDER:-openai}" uv run pytest --cov=app --cov-report=term-missing --cov-fail-under=90 -q'
+        entry: bash -c 'OPENAI_API_KEY="${OPENAI_API_KEY:-sk-ci-placeholder}" LLM_PROVIDER="${LLM_PROVIDER:-openai}" uv run python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=90 -q'
         language: system
         pass_filenames: false
         always_run: true

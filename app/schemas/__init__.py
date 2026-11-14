@@ -7,7 +7,12 @@ from app.schemas.estimation import (
     HealthResponse,
 )
 from app.schemas.llm import LLMResult
-from app.schemas.session import CreateSessionResponse, SessionEstimateResponse
+from app.schemas.session import (
+    CreateSessionResponse,
+    SessionEstimateResponse,
+    SessionSnapshotResponse,
+    TurnObserved,
+)
 
 __all__ = [
     "CreateSessionResponse",
@@ -17,4 +22,6 @@ __all__ = [
     "HealthResponse",
     "LLMResult",
     "SessionEstimateResponse",
+    "SessionSnapshotResponse",
+    "TurnObserved",
 ]

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Iterator, Sequence
 from typing import Any
 
@@ -11,6 +12,7 @@ from openai import OpenAI
 from app.config import LLMProvider, Settings, get_settings
 from app.schemas.llm import LLMResult
 from app.services.attachments import UploadedAttachment
+from app.services.pricing import estimate_cost_usd
 
 # Deterministic answers: stay close to prompt examples, less invention.
 _LLM_TEMPERATURE = 0.0
@@ -40,22 +42,49 @@ class LLMService:
         :raises ValueError: If ``LLM_PROVIDER`` is unsupported or the API key is missing.
         :raises Exception: Propagates provider/network errors from LiteLLM.
         """
-        provider = self._resolve_provider()
-        model = self.settings.resolved_model
-        response = completion(
-            **self._completion_kwargs(system=system, user=user, stream=False)
+        return self._complete_messages(
+            [
+                {"role": "system", "content": system},
+                {"role": "user", "content": user},
+            ]
         )
-        content = (response.choices[0].message.content or "").strip()
-        usage = getattr(response, "usage", None)
-        prompt_tokens, completion_tokens = self._usage_tokens(usage)
+
+    def _make_result(
+        self,
+        *,
+        estimation: str,
+        model: str,
+        provider: str,
+        prompt_tokens: int | None,
+        completion_tokens: int | None,
+        latency_ms: float,
+    ) -> LLMResult:
+        """Build an ``LLMResult`` including cost and latency observations.
+
+        :arg estimation: Free-text model output.
+        :arg model: Resolved model id.
+        :arg provider: Provider name string.
+        :arg prompt_tokens: Input token count when known.
+        :arg completion_tokens: Output token count when known.
+        :arg latency_ms: Wall-clock duration of the provider call.
+        :return: Frozen ``LLMResult``.
+        :raises: Does not raise under normal operation.
+        """
         self.last_prompt_tokens = prompt_tokens
         self.last_completion_tokens = completion_tokens
+        cost = estimate_cost_usd(
+            model,
+            tokens_in=prompt_tokens,
+            tokens_out=completion_tokens,
+        )
         return LLMResult(
-            estimation=content,
+            estimation=estimation,
             model=model,
-            provider=provider.value,
+            provider=provider,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
+            latency_ms=latency_ms,
+            cost_usd=cost,
         )
 
     def generate_with_attachments(
@@ -131,6 +160,7 @@ class LLMService:
         :raises Exception: Propagates LiteLLM/provider errors.
         """
         provider = self._resolve_provider()
+        started = time.perf_counter()
         response = completion(
             model=self.settings.litellm_model,
             messages=messages,
@@ -139,17 +169,17 @@ class LLMService:
             api_key=self._api_key_for_provider(provider),
             stream=False,
         )
+        latency_ms = (time.perf_counter() - started) * 1000.0
         content = (response.choices[0].message.content or "").strip()
         usage = getattr(response, "usage", None)
         prompt_tokens, completion_tokens = self._usage_tokens(usage)
-        self.last_prompt_tokens = prompt_tokens
-        self.last_completion_tokens = completion_tokens
-        return LLMResult(
+        return self._make_result(
             estimation=content,
             model=self.settings.resolved_model,
             provider=provider.value,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
+            latency_ms=latency_ms,
         )
 
     @staticmethod
@@ -207,6 +237,7 @@ class LLMService:
         input_items.append({"role": "user", "content": content})
 
         client = OpenAI(api_key=self.settings.openai_api_key)
+        started = time.perf_counter()
         response = client.responses.create(
             model=self.settings.resolved_model,
             instructions=system or None,
@@ -214,18 +245,18 @@ class LLMService:
             temperature=_LLM_TEMPERATURE,
             max_output_tokens=_LLM_MAX_TOKENS,
         )
+        latency_ms = (time.perf_counter() - started) * 1000.0
         text = (getattr(response, "output_text", None) or "").strip()
         usage = getattr(response, "usage", None)
         prompt_tokens = getattr(usage, "input_tokens", None) if usage else None
         completion_tokens = getattr(usage, "output_tokens", None) if usage else None
-        self.last_prompt_tokens = prompt_tokens
-        self.last_completion_tokens = completion_tokens
-        return LLMResult(
+        return self._make_result(
             estimation=text,
             model=self.settings.resolved_model,
             provider=LLMProvider.OPENAI.value,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
+            latency_ms=latency_ms,
         )
 
     def _generate_anthropic_files(

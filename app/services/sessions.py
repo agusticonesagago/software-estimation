@@ -195,6 +195,8 @@ class Session:
     session_id: str
     history: ConversationHistory = field(default_factory=ConversationHistory)
     metadata: ProjectMetadata = field(default_factory=ProjectMetadata)
+    turn_index: int = 0
+    last_turn_observed: dict[str, object] | None = None
 
 
 class SessionStore:

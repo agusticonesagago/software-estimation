@@ -25,17 +25,78 @@ from app.schemas.estimation import (
     ProjectType,
     PromptVersion,
 )
-from app.schemas.session import CreateSessionResponse, SessionEstimateResponse
-from app.services.attachments import AttachmentValidationError, upload_attachments
+from app.schemas.llm import LLMResult
+from app.schemas.session import (
+    CreateSessionResponse,
+    SessionEstimateResponse,
+    SessionSnapshotResponse,
+    TurnObserved,
+)
+from app.services.attachments import (
+    AttachmentValidationError,
+    UploadedAttachment,
+    upload_attachments,
+)
 from app.services.llm_service import LLMService
 from app.services.metadata_extractor import merge_project_metadata
-from app.services.sessions import ProjectMetadata, session_store
+from app.services.sessions import ProjectMetadata, Session, session_store
 
 router = APIRouter(tags=["sessions"])
 _trace = get_tracer_logger()
 
 _MIN_TRANSCRIPT_LENGTH = 20
 _MAX_TRANSCRIPT_LENGTH = 2000
+
+
+def _messages_in_window(session: Session) -> int:
+    """Count messages retained in the sliding window (system + turns).
+
+    :arg session: Active session.
+    :return: Message count including system when set.
+    :raises: Does not raise under normal operation.
+    """
+    return len(session.history.to_messages_list())
+
+
+def _record_turn_observed(
+    *,
+    session: Session,
+    transcript: str,
+    attachment_bytes: int,
+    result: LLMResult,
+) -> TurnObserved:
+    """Build, store, and log a unified ``turn_observed`` event.
+
+    Fields not yet implemented in this CAG baseline are filled with neutral
+    defaults: ``anchors_count=0``, ``summary_chars=0``, ``cache_hit_kind="none"``,
+    ``last_resolved_tier=None``.
+
+    :arg session: Session being updated.
+    :arg transcript: User transcript for this turn.
+    :arg attachment_bytes: Sum of raw attachment sizes.
+    :arg result: LLM result with tokens / latency / cost.
+    :return: The recorded ``TurnObserved`` model.
+    :raises: Does not raise under normal operation.
+    """
+    session.turn_index += 1
+    observation = TurnObserved(
+        turn_index=session.turn_index,
+        session_id=session.session_id,
+        enriched_transcript_chars=len(transcript) + attachment_bytes,
+        attachments_total_chars=attachment_bytes,
+        messages_in_window=_messages_in_window(session),
+        anchors_count=0,
+        summary_chars=0,
+        tokens_in=result.prompt_tokens,
+        tokens_out=result.completion_tokens,
+        cost_usd=result.cost_usd,
+        latency_ms=result.latency_ms,
+        cache_hit_kind="none",
+        last_resolved_tier=None,
+    )
+    session.last_turn_observed = observation.model_dump()
+    _trace.info("turn_observed", **observation.model_dump())
+    return observation
 
 
 @router.post(
@@ -76,6 +137,57 @@ def create_session() -> CreateSessionResponse:
     return CreateSessionResponse(session_id=session.session_id)
 
 
+@router.get(
+    "/sessions/{session_id}",
+    response_model=SessionSnapshotResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Inspect a session snapshot",
+    description=(
+        "Debug/stress endpoint: returns ``project_metadata``, sliding-window "
+        "sizes, and the last ``turn_observed`` payload so runners can evaluate "
+        "metrics without scraping logs. Anchors/summary/tier are always empty "
+        "in this baseline."
+    ),
+    response_description="In-memory session snapshot.",
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Session found.",
+            "model": SessionSnapshotResponse,
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Unknown ``session_id``.",
+            "model": ErrorResponse,
+        },
+    },
+)
+def get_session(session_id: str) -> SessionSnapshotResponse:
+    """Return a debug snapshot of an in-memory session.
+
+    :arg session_id: UUID from ``POST /sessions``.
+    :return: Metadata, window sizes, and last ``turn_observed``.
+    :raises HTTPException: 404 when the session is unknown.
+    """
+    session = session_store.get(session_id)
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Unknown session_id: {session_id}",
+        )
+    last = None
+    if session.last_turn_observed is not None:
+        last = TurnObserved.model_validate(session.last_turn_observed)
+    return SessionSnapshotResponse(
+        session_id=session.session_id,
+        message_count=_messages_in_window(session),
+        turn_count=session.history.turn_count,
+        anchors_count=0,
+        summary_chars=0,
+        last_resolved_tier=None,
+        project_metadata=session.metadata,
+        last_turn_observed=last,
+    )
+
+
 @router.post(
     "/sessions/{session_id}/estimate",
     response_model=SessionEstimateResponse,
@@ -85,11 +197,8 @@ def create_session() -> CreateSessionResponse:
         "Accepts ``multipart/form-data`` with ``transcript`` and optional "
         "``attachments`` (PDF / Office / text). Attachments use **Path A**: "
         "upload to the provider Files API (OpenAI) or multimodal file blocks "
-        "(Anthropic PDF) — no local ``pypdf`` extraction. The system prompt "
-        "includes ``<project_metadata>`` from prior turns; the sliding-window "
-        "history is sent via ``to_messages_list()`` (system regenerated from "
-        "metadata). After the LLM reply, metadata is updated heuristically and "
-        "the turn is appended (oldest pairs drop past ``SESSION_MAX_TURNS``)."
+        "(Anthropic PDF) — no local ``pypdf`` extraction. Emits a single "
+        "``turn_observed`` structlog event per successful turn."
     ),
     response_description="Free-text estimation plus prompt version.",
     responses={
@@ -167,10 +276,13 @@ async def estimate_session(
     )
 
     settings = get_settings()
+    uploaded: list[UploadedAttachment] = []
+    attachment_bytes = 0
     try:
         raw_files: list[tuple[str, bytes, str | None]] = []
         for upload in upload_list:
             data = await upload.read()
+            attachment_bytes += len(data)
             raw_files.append(
                 (upload.filename or "attachment.bin", data, upload.content_type)
             )
@@ -241,6 +353,12 @@ async def estimate_session(
         estimation=result.estimation,
     )
     session.history.append_turn(user=transcript, assistant=result.estimation)
+    observation = _record_turn_observed(
+        session=session,
+        transcript=transcript,
+        attachment_bytes=attachment_bytes,
+        result=result,
+    )
     response = SessionEstimateResponse(
         text=result.estimation,
         prompt_version=version,
@@ -259,5 +377,8 @@ async def estimate_session(
         history_turns=session.history.turn_count,
         attachment_file_ids=[item.file_id for item in uploaded if item.file_id],
         project_metadata=session.metadata.model_dump(),
+        turn_index=observation.turn_index,
+        latency_ms=result.latency_ms,
+        cost_usd=result.cost_usd,
     )
     return response

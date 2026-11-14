@@ -67,6 +67,10 @@ def test_generate_with_attachments_openai_uses_responses_file_ids() -> None:
     assert result.estimation.startswith("## Estimation:")
     assert result.prompt_tokens == 9
     assert result.completion_tokens == 4
+    assert result.latency_ms is not None
+    assert result.latency_ms >= 0
+    assert result.cost_usd is not None
+    assert result.cost_usd >= 0
 
 
 def test_generate_from_messages_sends_full_sliding_window() -> None:
