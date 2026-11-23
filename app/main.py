@@ -8,6 +8,7 @@ from fastapi.responses import RedirectResponse
 from pydantic import ValidationError
 
 from app.config import get_settings
+from app.embedding_pipeline.router import router as embeddings_router
 from app.logging_config import configure_logging
 from app.routers.estimations import router as estimations_router
 from app.routers.sessions import router as sessions_router
@@ -30,6 +31,13 @@ OPENAPI_TAGS = [
         "description": (
             "In-memory conversational sessions (UUID ``session_id``) for "
             "multi-turn estimation. Not persisted across process restarts."
+        ),
+    },
+    {
+        "name": "embeddings",
+        "description": (
+            "Structural chunking of historical budgets and OpenAI "
+            "``text-embedding-3-small`` vectors (in-memory; no vector DB yet)."
         ),
     },
 ]
@@ -57,6 +65,7 @@ server environment variables (`OPENAI_API_KEY` / `ANTHROPIC_API_KEY`).
 2. `POST /api/v1/sessions` - create a conversation and keep `session_id`
 3. `POST /api/v1/estimate` - one-shot typed `EstimationRequest` (session 04)
 4. Multi-turn estimate under `/api/v1/sessions/{session_id}/...` (session 05)
+5. `POST /embeddings/ingest` - chunk + embed historical budgets (session 07)
 """
 
 
@@ -98,6 +107,10 @@ app.include_router(
 app.include_router(
     sessions_router,
     prefix="/api/v1",
+)
+app.include_router(
+    embeddings_router,
+    prefix="/embeddings",
 )
 
 

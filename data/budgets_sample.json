@@ -1,0 +1,503 @@
+[
+  {
+    "budget_id": "BUD-2024-001",
+    "client_metadata": {"name": "FintechCorp", "sector": "finance", "country": "ES"},
+    "project_summary": "Mobile banking API with OAuth 2.0 authentication and PSD2 compliance",
+    "main_technology": "ruby_on_rails",
+    "year": 2024,
+    "total_estimated_hours": 480,
+    "components": [
+      {
+        "component_id": "AUTH-001",
+        "name": "OAuth 2.0 authentication backend",
+        "description": "Implementation of OAuth 2.0 flows (authorization code, refresh token) with JWT-based session management, multi-tenant token isolation, and rate limiting per client.",
+        "tech_stack": ["ruby_on_rails", "postgresql", "redis"],
+        "estimated_hours": 120,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "API-001",
+        "name": "Account and payment REST API",
+        "description": "RESTful endpoints for balances, transfers, and statement export with idempotency keys and audit logging.",
+        "tech_stack": ["ruby_on_rails", "postgresql"],
+        "estimated_hours": 200,
+        "complexity": "high",
+        "dependencies": ["AUTH-001"]
+      },
+      {
+        "component_id": "COMP-001",
+        "name": "PSD2 compliance checks",
+        "description": "Strong customer authentication hooks and consent registry aligned with PSD2 requirements.",
+        "tech_stack": ["ruby_on_rails"],
+        "estimated_hours": 160,
+        "complexity": "medium",
+        "dependencies": ["AUTH-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-002",
+    "client_metadata": {"name": "ShopFast", "sector": "e-commerce", "country": "PT"},
+    "project_summary": "Headless commerce checkout with Stripe and inventory sync",
+    "main_technology": "nodejs",
+    "year": 2024,
+    "total_estimated_hours": 360,
+    "components": [
+      {
+        "component_id": "CHK-001",
+        "name": "Checkout orchestration service",
+        "description": "Cart validation, tax calculation, and Stripe PaymentIntent creation with webhook reconciliation.",
+        "tech_stack": ["nodejs", "typescript", "redis"],
+        "estimated_hours": 140,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "INV-001",
+        "name": "Inventory sync worker",
+        "description": "Nightly and near-real-time stock updates from ERP webhooks into the product catalog.",
+        "tech_stack": ["nodejs", "postgresql"],
+        "estimated_hours": 120,
+        "complexity": "medium",
+        "dependencies": []
+      },
+      {
+        "component_id": "CAT-001",
+        "name": "Product catalog GraphQL API",
+        "description": "Read-optimized GraphQL schema for SKUs, variants, and pricing tiers.",
+        "tech_stack": ["nodejs", "graphql", "postgresql"],
+        "estimated_hours": 100,
+        "complexity": "medium",
+        "dependencies": ["INV-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2023-003",
+    "client_metadata": {"name": "ClinicNet", "sector": "healthcare", "country": "ES"},
+    "project_summary": "Patient appointment booking portal with HL7 FHIR integration",
+    "main_technology": "python",
+    "year": 2023,
+    "total_estimated_hours": 420,
+    "components": [
+      {
+        "component_id": "FHIR-001",
+        "name": "FHIR patient adapter",
+        "description": "Bidirectional HL7 FHIR R4 adapter for Patient and Appointment resources against the hospital HIS.",
+        "tech_stack": ["python", "fastapi", "postgresql"],
+        "estimated_hours": 180,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "BOOK-001",
+        "name": "Appointment booking UI",
+        "description": "Responsive booking calendar with slot holds, reminders, and cancellation policies.",
+        "tech_stack": ["react", "typescript"],
+        "estimated_hours": 140,
+        "complexity": "medium",
+        "dependencies": ["FHIR-001"]
+      },
+      {
+        "component_id": "NOTIF-001",
+        "name": "SMS and email reminders",
+        "description": "Templated appointment reminders via SMS gateway and transactional email.",
+        "tech_stack": ["python", "celery", "redis"],
+        "estimated_hours": 100,
+        "complexity": "low",
+        "dependencies": ["BOOK-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-004",
+    "client_metadata": {"name": "PlantOps", "sector": "industrial", "country": "DE"},
+    "project_summary": "OT dashboard for factory line KPIs and anomaly alerts",
+    "main_technology": "dotnet",
+    "year": 2024,
+    "total_estimated_hours": 520,
+    "components": [
+      {
+        "component_id": "INGEST-001",
+        "name": "OPC-UA telemetry ingest",
+        "description": "Secure OPC-UA collectors streaming machine metrics into a time-series store.",
+        "tech_stack": ["dotnet", "influxdb"],
+        "estimated_hours": 200,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "DASH-001",
+        "name": "Line KPI dashboard",
+        "description": "Real-time OEE and scrap-rate dashboards with role-based plant views.",
+        "tech_stack": ["react", "dotnet"],
+        "estimated_hours": 180,
+        "complexity": "medium",
+        "dependencies": ["INGEST-001"]
+      },
+      {
+        "component_id": "ALERT-001",
+        "name": "Anomaly alert engine",
+        "description": "Threshold and simple statistical anomaly rules with Slack and email fan-out.",
+        "tech_stack": ["dotnet", "redis"],
+        "estimated_hours": 140,
+        "complexity": "medium",
+        "dependencies": ["INGEST-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2022-005",
+    "client_metadata": {"name": "EduPath", "sector": "education", "country": "FR"},
+    "project_summary": "Learning management MVP with video lessons and quizzes",
+    "main_technology": "django",
+    "year": 2022,
+    "total_estimated_hours": 300,
+    "components": [
+      {
+        "component_id": "LMS-001",
+        "name": "Course and enrollment API",
+        "description": "CRUD for courses, modules, and student enrollments with progress tracking.",
+        "tech_stack": ["django", "postgresql"],
+        "estimated_hours": 120,
+        "complexity": "medium",
+        "dependencies": []
+      },
+      {
+        "component_id": "VID-001",
+        "name": "Video streaming integration",
+        "description": "Signed URL delivery for lesson videos via a third-party CDN.",
+        "tech_stack": ["django", "s3"],
+        "estimated_hours": 100,
+        "complexity": "medium",
+        "dependencies": ["LMS-001"]
+      },
+      {
+        "component_id": "QUIZ-001",
+        "name": "Quiz engine",
+        "description": "Multiple-choice quizzes with scoring, attempts, and feedback.",
+        "tech_stack": ["django"],
+        "estimated_hours": 80,
+        "complexity": "low",
+        "dependencies": ["LMS-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-006",
+    "client_metadata": {"name": "FleetGo", "sector": "logistics", "country": "ES"},
+    "project_summary": "Last-mile routing API with driver mobile app",
+    "main_technology": "golang",
+    "year": 2024,
+    "total_estimated_hours": 440,
+    "components": [
+      {
+        "component_id": "ROUTE-001",
+        "name": "Route optimization service",
+        "description": "VRP-style route planning with time windows and vehicle capacity constraints.",
+        "tech_stack": ["golang", "postgresql", "redis"],
+        "estimated_hours": 200,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "DRV-001",
+        "name": "Driver mobile app",
+        "description": "Flutter app for stop lists, proof of delivery photos, and live GPS pings.",
+        "tech_stack": ["flutter", "dart"],
+        "estimated_hours": 160,
+        "complexity": "high",
+        "dependencies": ["ROUTE-001"]
+      },
+      {
+        "component_id": "TRACK-001",
+        "name": "Live tracking map",
+        "description": "Web map for dispatchers showing vehicle positions and ETA updates.",
+        "tech_stack": ["react", "typescript"],
+        "estimated_hours": 80,
+        "complexity": "medium",
+        "dependencies": ["ROUTE-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2023-007",
+    "client_metadata": {"name": "Streamify", "sector": "media", "country": "GB"},
+    "project_summary": "Video-on-demand catalog and subscription billing",
+    "main_technology": "kotlin",
+    "year": 2023,
+    "total_estimated_hours": 500,
+    "components": [
+      {
+        "component_id": "CAT-007",
+        "name": "Content catalog service",
+        "description": "Metadata service for titles, seasons, and availability windows.",
+        "tech_stack": ["kotlin", "postgresql"],
+        "estimated_hours": 160,
+        "complexity": "medium",
+        "dependencies": []
+      },
+      {
+        "component_id": "BILL-001",
+        "name": "Subscription billing",
+        "description": "Recurring plans, trials, and dunning via a payment provider.",
+        "tech_stack": ["kotlin", "stripe"],
+        "estimated_hours": 180,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "PLAY-001",
+        "name": "Playback entitlement API",
+        "description": "Tokenised playback entitlements tied to active subscriptions.",
+        "tech_stack": ["kotlin", "redis"],
+        "estimated_hours": 160,
+        "complexity": "high",
+        "dependencies": ["CAT-007", "BILL-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-008",
+    "client_metadata": {"name": "PayLite", "sector": "finance", "country": "NL"},
+    "project_summary": "Merchant payouts ledger with reconciliation exports",
+    "main_technology": "java",
+    "year": 2024,
+    "total_estimated_hours": 380,
+    "components": [
+      {
+        "component_id": "LED-001",
+        "name": "Double-entry ledger",
+        "description": "Immutable ledger entries with account balances and currency support.",
+        "tech_stack": ["java", "spring", "postgresql"],
+        "estimated_hours": 180,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "PAYOUT-001",
+        "name": "Payout batch runner",
+        "description": "Scheduled payout batches to bank rails with retry and dead-letter queues.",
+        "tech_stack": ["java", "kafka"],
+        "estimated_hours": 120,
+        "complexity": "high",
+        "dependencies": ["LED-001"]
+      },
+      {
+        "component_id": "REC-001",
+        "name": "Reconciliation CSV export",
+        "description": "Daily reconciliation files for finance with hash checksums.",
+        "tech_stack": ["java", "s3"],
+        "estimated_hours": 80,
+        "complexity": "low",
+        "dependencies": ["LED-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2023-009",
+    "client_metadata": {"name": "CartHero", "sector": "e-commerce", "country": "IT"},
+    "project_summary": "Personalized product recommendations for an online store",
+    "main_technology": "python",
+    "year": 2023,
+    "total_estimated_hours": 280,
+    "components": [
+      {
+        "component_id": "REC-009",
+        "name": "Recommendation batch jobs",
+        "description": "Collaborative filtering batch that produces per-user top-N SKUs.",
+        "tech_stack": ["python", "spark", "s3"],
+        "estimated_hours": 140,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "API-009",
+        "name": "Recommendations API",
+        "description": "Low-latency lookup API serving precomputed recommendations with fallbacks.",
+        "tech_stack": ["python", "fastapi", "redis"],
+        "estimated_hours": 140,
+        "complexity": "medium",
+        "dependencies": ["REC-009"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-010",
+    "client_metadata": {"name": "MediTrack", "sector": "healthcare", "country": "ES"},
+    "project_summary": "Medication adherence reminders for chronic patients",
+    "main_technology": "nodejs",
+    "year": 2024,
+    "total_estimated_hours": 260,
+    "components": [
+      {
+        "component_id": "PLAN-001",
+        "name": "Medication plan service",
+        "description": "CRUD for dosage schedules, caregivers, and adherence logs.",
+        "tech_stack": ["nodejs", "postgresql"],
+        "estimated_hours": 120,
+        "complexity": "medium",
+        "dependencies": []
+      },
+      {
+        "component_id": "PUSH-001",
+        "name": "Push reminder dispatcher",
+        "description": "Timezone-aware push and SMS reminders with quiet hours.",
+        "tech_stack": ["nodejs", "redis"],
+        "estimated_hours": 140,
+        "complexity": "medium",
+        "dependencies": ["PLAN-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2022-011",
+    "client_metadata": {"name": "SteelSense", "sector": "industrial", "country": "PL"},
+    "project_summary": "Predictive maintenance scoring for CNC machines",
+    "main_technology": "python",
+    "year": 2022,
+    "total_estimated_hours": 340,
+    "components": [
+      {
+        "component_id": "FEAT-001",
+        "name": "Sensor feature pipeline",
+        "description": "Feature extraction from vibration and temperature series.",
+        "tech_stack": ["python", "pandas", "postgresql"],
+        "estimated_hours": 160,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "MODEL-001",
+        "name": "Failure risk model service",
+        "description": "Online scoring endpoint returning risk bands for each machine.",
+        "tech_stack": ["python", "fastapi"],
+        "estimated_hours": 180,
+        "complexity": "high",
+        "dependencies": ["FEAT-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-012",
+    "client_metadata": {"name": "CampusHub", "sector": "education", "country": "ES"},
+    "project_summary": "Campus access control with QR badges",
+    "main_technology": "csharp",
+    "year": 2024,
+    "total_estimated_hours": 220,
+    "components": [
+      {
+        "component_id": "BADGE-001",
+        "name": "QR badge issuer",
+        "description": "Issues rotating QR badges tied to student identity and campus roles.",
+        "tech_stack": ["csharp", "sqlserver"],
+        "estimated_hours": 100,
+        "complexity": "medium",
+        "dependencies": []
+      },
+      {
+        "component_id": "GATE-001",
+        "name": "Gate validation API",
+        "description": "Validates badges at turnstiles with offline grace cache.",
+        "tech_stack": ["csharp", "redis"],
+        "estimated_hours": 120,
+        "complexity": "medium",
+        "dependencies": ["BADGE-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2023-013",
+    "client_metadata": {"name": "ParcelAir", "sector": "logistics", "country": "FR"},
+    "project_summary": "Warehouse slotting optimizer for outbound orders",
+    "main_technology": "java",
+    "year": 2023,
+    "total_estimated_hours": 310,
+    "components": [
+      {
+        "component_id": "SLOT-001",
+        "name": "Slotting optimizer",
+        "description": "Heuristic optimizer assigning SKUs to warehouse locations by velocity.",
+        "tech_stack": ["java", "postgresql"],
+        "estimated_hours": 180,
+        "complexity": "high",
+        "dependencies": []
+      },
+      {
+        "component_id": "WMS-001",
+        "name": "WMS integration adapter",
+        "description": "Push slotting plans into the existing warehouse management system.",
+        "tech_stack": ["java", "rabbitmq"],
+        "estimated_hours": 130,
+        "complexity": "medium",
+        "dependencies": ["SLOT-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-014",
+    "client_metadata": {"name": "NewsPulse", "sector": "media", "country": "ES"},
+    "project_summary": "Editorial CMS with SEO previews and scheduled publish",
+    "main_technology": "nodejs",
+    "year": 2024,
+    "total_estimated_hours": 290,
+    "components": [
+      {
+        "component_id": "CMS-001",
+        "name": "Article CMS API",
+        "description": "Draft, review, and publish workflows with revision history.",
+        "tech_stack": ["nodejs", "postgresql"],
+        "estimated_hours": 150,
+        "complexity": "medium",
+        "dependencies": []
+      },
+      {
+        "component_id": "SEO-001",
+        "name": "SEO preview service",
+        "description": "Open Graph and meta previews for editors before publish.",
+        "tech_stack": ["nodejs"],
+        "estimated_hours": 70,
+        "complexity": "low",
+        "dependencies": ["CMS-001"]
+      },
+      {
+        "component_id": "SCHED-001",
+        "name": "Scheduled publish worker",
+        "description": "Timezone-aware scheduled publishing with rollback on failure.",
+        "tech_stack": ["nodejs", "redis"],
+        "estimated_hours": 70,
+        "complexity": "medium",
+        "dependencies": ["CMS-001"]
+      }
+    ]
+  },
+  {
+    "budget_id": "BUD-2024-015",
+    "client_metadata": {"name": "HelpDesk AI", "sector": "other", "country": "ES"},
+    "project_summary": "Internal ticket triage assistant with Slack alerts",
+    "main_technology": "python",
+    "year": 2024,
+    "total_estimated_hours": 240,
+    "components": [
+      {
+        "component_id": "TRIAGE-001",
+        "name": "Ticket triage classifier",
+        "description": "Classifies inbound tickets by urgency and team ownership hints.",
+        "tech_stack": ["python", "fastapi"],
+        "estimated_hours": 130,
+        "complexity": "medium",
+        "dependencies": []
+      },
+      {
+        "component_id": "SLACK-001",
+        "name": "Slack alert bridge",
+        "description": "Posts triage results to team channels with deep links to the ticket.",
+        "tech_stack": ["python", "slack_sdk"],
+        "estimated_hours": 110,
+        "complexity": "low",
+        "dependencies": ["TRIAGE-001"]
+      }
+    ]
+  }
+]

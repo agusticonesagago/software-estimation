@@ -153,6 +153,46 @@ Example response shape:
 }
 ```
 
+## Embeddings ingest (session 07)
+
+Structural chunking of historical budgets + OpenAI `text-embedding-3-small`.
+Vectors are returned in memory (no pgvector yet).
+
+### Endpoint
+
+```bash
+# Sample body: data/budgets_sample.json wrapped as {"budgets": [...]}
+curl -X POST http://localhost:8080/embeddings/ingest \
+  -H "Content-Type: application/json" \
+  -d "{\"budgets\": $(cat data/budgets_sample.json)}"
+```
+
+Or open Swagger at [http://localhost:8080/docs](http://localhost:8080/docs)
+and try **POST /embeddings/ingest**.
+
+Requires `OPENAI_API_KEY` in `.env`.
+
+### Cosine similarity CLI (`scripts/compare.py`)
+
+Outside the container (loads `.env` via `python-dotenv`):
+
+```bash
+uv run python scripts/compare.py \
+  --text-a "OAuth 2.0 authentication backend for fintech" \
+  --text-b "JWT-based authorization service for banking app"
+```
+
+Inside Docker Compose (service name is `api` in this repo):
+
+```bash
+docker compose exec api python scripts/compare.py \
+  --text-a "OAuth 2.0 authentication backend for fintech" \
+  --text-b "JWT-based authorization service for banking app"
+```
+
+Sanity-check results for three fixed text pairs live in
+`app/embedding_pipeline/SANITY_CHECK.md`.
+
 ## Project layout
 
 ```text
@@ -161,10 +201,15 @@ software-estimation/
 │   ├── main.py
 │   ├── config.py
 │   ├── logging_config.py
+│   ├── embedding_pipeline/  # chunker + OpenAI embedder + /embeddings/ingest
 │   ├── routers/
 │   ├── services/            # llm_service.py (LiteLLM)
 │   ├── prompts/             # Jinja2 estimation templates (v1/v2) + loader
 │   └── schemas/             # HTTP + LLM payloads
+├── data/
+│   └── budgets_sample.json  # 15 normalised historical budgets
+├── scripts/
+│   └── compare.py           # cosine similarity CLI
 ├── docs/                    # Project documentation
 ├── tests/
 │   ├── unit/

@@ -13,6 +13,8 @@ RUN uv sync --frozen --no-install-project --no-dev
 
 COPY app ./app
 COPY streamlit_app.py ./
+COPY scripts ./scripts
+COPY data ./data
 RUN uv sync --frozen --no-dev
 
 FROM python:3.11-slim-bookworm AS runtime
